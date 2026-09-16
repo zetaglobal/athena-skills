@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "athena": {
+      "type": "http",
+      "url": "https://gateway.mcp.zetaglobal.net/virtual/athena-mcp/mcp"
+    }
+  }
+}

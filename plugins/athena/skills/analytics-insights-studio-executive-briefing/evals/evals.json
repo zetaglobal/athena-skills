@@ -1,0 +1,83 @@
+{
+  "skill_name": "analytics-insights-studio-executive-briefing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Give me an executive performance summary from Insights Studio.",
+      "expected_output": "Returns a concise briefing in conversation without creating HTML, PDF, PowerPoint, CSV, or another artifact. With no supplied choices it resolves crm, uses the most recent full Monday-Sunday week versus the preceding week, states account-wide scope, fetches current/comparison totals in parallel using a non-empty schema-confirmed period dimension, and fetches at most one useful trend and one useful campaign breakdown in a second small wave. It omits empty headings and offers richer follow-ups only at the end.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "How did clicks change last month?",
+      "expected_output": "Keeps the question focused: resolves the relevant dataset and exact schema field, then fetches only current and prior-month click totals. It does not add an unrelated KPI bundle, trend, breakdown, campaign interview, or artifact. It prints exact queried dates and handles a zero prior value as no prior-period baseline rather than NaN, Infinity, or a fabricated percentage.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Show the top email campaigns last week.",
+      "expected_output": "Uses crm, validates campaign_name and the chosen email volume/outcome metrics against the live schema, applies an Email channel filter when supported, and runs one bounded current-period ranked query with deterministic sorting and page_size 10. It labels the output as top returned rows when truncated and does not exhaustively paginate, fetch a comparison, or generate an artifact unless requested.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Give me a QTD crm briefing for campaign Spring Launch, broken down by device.",
+      "expected_output": "Honors crm, QTD, the exact named campaign, and device breakdown without asking redundant questions. It uses get_dataset_schema before queries, applies standard_dataset_dimension_filters to every fetch, passes absolute QTD and prior-QTD dates inside report_date_range, and includes device only if returned rows vary meaningfully and do not violate schema incompatibilities. Any unusable device section is omitted while usable KPI sections remain.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "The current-period query is empty but the comparison and trend calls returned data.",
+      "expected_output": "Distinguishes an empty current data array from authentication failure, preserves and explains the usable comparison or historical context, omits unsupported current KPI claims and empty headings, and offers a relevant period, campaign, or dataset follow-up. It does not discard the whole briefing, retry automatically, or render an empty artifact.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "fetch_metrics_data says report_date_range and pagination arrived as strings; keep retrying.",
+      "expected_output": "Treats input_type=str for nested arguments as stale client/session marshalling, not empty data or an authentication failure. It does not retry equivalent payloads in the same session. It preserves the selected dataset and dates, gives only the current host's reconnect and fresh-task guidance, and replays one identical probe after reconnection.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Give me all the rows behind that breakdown.",
+      "expected_output": "Reuses the normalized rows already fetched, continues pagination only when needed to fulfill the explicit request, deduplicates appended rows, and returns the data as a portable Markdown table. It does not repeat current, comparison, or trend calls and does not expose internal IDs.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Make that briefing a shareable HTML summary.",
+      "expected_output": "Uses the existing template and already-normalized data without repeating Athena calls. It builds a complete source manifest with exact arguments, returned columns, row counts, statuses, and only actual MCP-returned URLs; validates the data block with the packaged validator; stops on R-KPI-EMPTY; creates one self-contained HTML file; and visibly inspects it before claiming success. It does not automatically create PDF, PowerPoint, or CSV.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Open the matching report in ZMP.",
+      "expected_output": "Navigates only when the MCP response actually returned a relevant URL or the user explicitly asks to open a known visible ZMP surface. It distinguishes an MCP-returned URL, a browser-visible report URL, and the generic Insights Studio landing URL, and never implies that Athena created or saved a report.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Validate this Insights Studio result against the visible ZMP report.",
+      "expected_output": "Uses MCP data as the source and the authenticated browser only as corroboration. It compares the exact dataset/report/campaign or version name, variant, metric values, visible period label or exact dates, filters, and any returned redirect URL. It reports exact matches, UI rounding, missing fields, scope/filter/date-grain differences, and session failures separately, and never substitutes browser-only values into the briefing.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "Break performance down by channel using open rate.",
+      "expected_output": "Validates channel_name and open_rate against the schema, keeps open_rate as a fraction internally and formats it as a percentage, and never sums rates. It requires meaningful variation before describing a channel driver. If a count metric is also used, it reconciles additive returned rows to the total while labeling top-N sums partial rather than treating truncation as failure.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "Give me an Audience growth briefing.",
+      "expected_output": "Uses the audience dataset and live schema. It uses total_people for a non-negative size or trend and net_people for signed growth, never treating net_people as a count. It provides a concise conversational briefing, exact date provenance, and no automatic artifact.",
+      "files": []
+    },
+    {
+      "id": 13,
+      "prompt": "The client rejects dimensions when I request totals with an empty list.",
+      "expected_output": "Recognizes the empty-dimensions client marshalling issue and does not classify it as empty data or authentication failure. It uses the coarsest schema-confirmed temporal dimension that yields one row for the requested period, such as engagement_week for a full CRM week. It sums only additive metrics across multiple returned buckets and never invents an aggregate rate.",
+      "files": []
+    }
+  ]
+}

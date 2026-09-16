@@ -1,0 +1,79 @@
+name: Public Repo 
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: write 
+  attestations: write
+
+jobs:
+  publish:
+    environment: public-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 
+        with:
+          node-version: "20"
+
+      - uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0 
+
+      - name: Read release metadata
+        id: release
+        run: |
+          version=$(node -p "require('./plugins/athena/.claude-plugin/plugin.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build Claude and ChatGPT packages
+        run: bash scripts/package-all.sh
+
+      - name: Install Gitleaks
+        env:
+          GITLEAKS_VERSION: "8.30.0"
+          GITLEAKS_SHA256: "79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e"
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}" -o "$archive"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum -c -
+          tar -xzf "$archive" -C /usr/local/bin gitleaks
+          gitleaks version
+
+      - name: Scan packaged release artifacts
+        run: bash scripts/scan-release-artifacts.sh dist
+
+      - name: Create Signed Checksums
+        run: |
+          cd dist
+          sha256sum "athena-claude-v${{ steps.release.outputs.version }}.zip" "athena-chatgpt-v${{ steps.release.outputs.version }}.zip" > SHA256SUMS
+          cosign sign-blob --yes \
+            --bundle SHA256SUMS.sigstore.json \
+            SHA256SUMS
+
+      - name: Attest Release ZIPs
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2 
+        with:
+          subject-checksums: dist/SHA256SUMS
+
+      - name: Publish GitHub Beta Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.release.outputs.version }}" >/dev/null 2>&1; then
+            echo "Release v${{ steps.release.outputs.version }} already exists"
+            exit 1
+          fi
+          gh release create "v${{ steps.release.outputs.version }}" \
+            "dist/athena-claude-v${{ steps.release.outputs.version }}.zip" \
+            "dist/athena-chatgpt-v${{ steps.release.outputs.version }}.zip" \
+            "dist/SHA256SUMS" \
+            "dist/SHA256SUMS.sigstore.json" \
+            --verify-tag \
+            --title "Athena by Zeta v${{ steps.release.outputs.version }}" \
+            --generate-notes

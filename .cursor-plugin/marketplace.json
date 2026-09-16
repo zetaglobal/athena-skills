@@ -1,0 +1,33 @@
+{
+  "name": "zetaglobal",
+  "owner": {
+    "name": "Zeta Global"
+  },
+  "metadata": {
+    "description": "Predictive answers, real-time activation and measurement in one adaptive command center.",
+    "version": "0.6.28"
+  },
+  "plugins": [
+    {
+      "name": "athena",
+      "source": "./plugins/athena",
+      "description": "Predictive answers, real-time activation and measurement in one adaptive command center.",
+      "version": "0.6.28",
+      "category": "analytics",
+      "keywords": [
+        "zeta",
+        "athena",
+        "marketing",
+        "analytics",
+        "mcp",
+        "customer-pulse",
+        "insights-studio",
+        "location-intelligence"
+      ],
+      "author": {
+        "name": "Zeta Global"
+      },
+      "license": "SEE LICENSE IN LICENSE"
+    }
+  ]
+}

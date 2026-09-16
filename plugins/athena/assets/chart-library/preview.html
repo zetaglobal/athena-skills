@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Athena chart library — preview</title>
+<style>
+:root{
+  --background:0 0% 100%; --foreground:222 47% 11%; --card:0 0% 100%;
+  --muted-foreground:215 16% 47%; --border:214 32% 91%; --primary:221 83% 53%;
+  --ramp-1:162 84% 30%; --ramp-2:221 83% 47%; --ramp-3:349 80% 48%; --radius:.625rem;
+}
+:root.dark{
+  --background:222 47% 11%; --foreground:210 40% 98%; --card:222 47% 14%;
+  --muted-foreground:215 20% 65%; --border:217 33% 24%; --primary:217 91% 60%;
+  --ramp-1:158 64% 52%; --ramp-2:199 89% 62%; --ramp-3:351 95% 71%;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  background:hsl(var(--background));color:hsl(var(--foreground));padding:32px}
+.wrap{max-width:920px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+.card{border:1px solid hsl(var(--border));border-radius:var(--radius);background:hsl(var(--card));padding:20px}
+h1{font-size:20px;margin:0 0 4px} h2{font-size:15px;margin:0 0 14px}
+.scroller{overflow-x:auto}
+.donuts{display:flex;gap:24px;flex-wrap:wrap;justify-content:center}
+.donut{display:flex;flex-direction:column;align-items:center;gap:6px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;font-size:12px;color:hsl(var(--muted-foreground))}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.swatch{width:10px;height:10px;border-radius:2px;display:inline-block}
+.toggle{position:fixed;right:20px;top:20px;padding:7px 12px;border:1px solid hsl(var(--border));
+  border-radius:8px;background:hsl(var(--card));color:hsl(var(--foreground));font-size:12px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<button class="toggle" onclick="document.documentElement.classList.toggle('dark');draw()">Light / dark</button>
+<div class="wrap">
+  <h1>Athena chart library — preview</h1>
+  <div class="card"><h2>Donut — share of reach (part-to-whole)</h2>
+    <div id="donut-host"></div><div class="legend" id="donut-legend"></div></div>
+  <div class="card"><h2>Bar — customers by market (ranked)</h2>
+    <div class="scroller"><svg id="bar"></svg></div></div>
+  <div class="card"><h2>Baseline bar — over-index vs Network Baseline (some below)</h2>
+    <div class="scroller"><svg id="baseline"></svg></div>
+    <p style="font-size:12px;color:hsl(var(--muted-foreground));margin-top:10px">Percentages shown inside the bars represent relative differences from the Network Baseline.</p></div>
+  <div class="card"><h2>Area / line — signups by day (time series, with a gap)</h2>
+    <div class="scroller"><svg id="line"></svg></div></div>
+</div>
+
+<script>
+/* ---- helpers.js ---- */
+function chartHelpers(){
+  var NS='http://www.w3.org/2000/svg';
+  var css=function(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim();};
+  return {NS:NS,
+    SHARE_HSL:['221 83% 53%','174 62% 33%','262 60% 55%','215 16% 47%'],
+    SEG_HSL:['221 83% 53%','32 95% 44%','262 83% 58%','174 72% 34%'],
+    el:function(tag,attrs,text){var n=document.createElementNS(NS,tag);for(var k in attrs)n.setAttribute(k,attrs[k]);if(text!=null)n.textContent=text;return n;},
+    hsl:function(name){return 'hsl('+css(name)+')';},
+    fmt:function(n){return Number(n).toLocaleString('en-US');},
+    pct:function(n){return (Math.round(Number(n)*10)/10)+'%';},
+    fit:function(s,max){return s.length<=max?s:s.slice(0,max-1).replace(/[\s,\-]+$/,'')+'…';}
+  };
+}
+</script>
+<script src="donut.js"></script>
+<script src="bar.js"></script>
+<script src="line.js"></script>
+<script>
+/* Fallback: if the sibling <script src> files are blocked (e.g. a sandboxed
+   snapshot), the inline copies below keep the preview rendering. They are kept
+   byte-identical to the library files — update both together. */
+if (typeof donutChart === 'undefined'){
+  /* eslint-disable */
+  donutChart=function(host,data,opts){opts=opts||{};var h=opts.helpers||chartHelpers();var PAL=opts.palette||h.SHARE_HSL;var rows=data.rows,series=(data.series&&data.series.length)||1;if(!rows||!rows.length)return false;var sums=[];for(var si=0;si<series;si++){var t=0,seen=0;rows.forEach(function(r){var v=Number(r.values[si]);if(isFinite(v)){t+=v;seen++;}});if(!seen)return false;sums.push(t);}if(!sums.every(function(t){return t>=90&&t<=110;}))return false;var arcPt=function(cx,cy,r,a){return[cx+r*Math.cos(a),cy+r*Math.sin(a)];};host.innerHTML='';host.className='donuts';for(var s=0;s<series;s++){var seg=(data.series&&data.series[s])||{},total=sums[s];var R=54,RI=33,cx=70,cy=70,a=-Math.PI/2;var svg=h.el('svg',{viewBox:'0 0 140 140',style:'width:150px;height:150px',role:'img'});var lead=null;rows.forEach(function(r,ri){var v=Number(r.values[s]);if(!isFinite(v)||v<=0)return;if(!lead||v>lead.v)lead={v:v,label:r.label};var sweep=(v/total)*Math.PI*2,a2=a+sweep;var large=sweep>Math.PI?1:0;var o0=arcPt(cx,cy,R,a),o1=arcPt(cx,cy,R,a2);var i1=arcPt(cx,cy,RI,a2),i0=arcPt(cx,cy,RI,a);svg.appendChild(h.el('path',{d:'M'+o0[0]+' '+o0[1]+'A'+R+' '+R+' 0 '+large+' 1 '+o1[0]+' '+o1[1]+'L'+i1[0]+' '+i1[1]+'A'+RI+' '+RI+' 0 '+large+' 0 '+i0[0]+' '+i0[1]+'Z',fill:'hsl('+PAL[ri%PAL.length]+')'}));a=a2;});if(lead){svg.appendChild(h.el('text',{x:cx,y:cy-6,'text-anchor':'middle','dominant-baseline':'middle','font-size':17,'font-weight':700,fill:h.hsl('--foreground'),style:'font-variant-numeric:tabular-nums'},h.pct(lead.v)));svg.appendChild(h.el('text',{x:cx,y:cy+12,'text-anchor':'middle','dominant-baseline':'middle','font-size':10,'font-weight':600,fill:h.hsl('--muted-foreground')},h.fit(lead.label,14)));}var wrap=document.createElement('div');wrap.className='donut';wrap.appendChild(svg);host.appendChild(wrap);}if(opts.legendNode){opts.legendNode.innerHTML=rows.map(function(r,ri){var v=Number(r.values[0]);var val=(series===1&&isFinite(v))?' '+h.pct(v):'';return '<span><i class="swatch" style="background:hsl('+PAL[ri%PAL.length]+')"></i>'+r.label+val+'</span>';}).join('');}return true;};
+  barChart=function(svg,data,opts){opts=opts||{};var h=opts.helpers||chartHelpers();if(!data||!data.length)return;var valueFmt=opts.valueFmt||h.fmt;var LABEL_W=210,AREA_W=470,ROW_H=32,BAR_H=18,TOP=8,PAD=90;var w=LABEL_W+AREA_W+PAD,h2=TOP+data.length*ROW_H+8;svg.setAttribute('viewBox','0 0 '+w+' '+h2);svg.setAttribute('style','max-width:'+w+'px');svg.setAttribute('role','img');svg.setAttribute('aria-label',opts.aria||'Ranked bar chart');var max=Math.max.apply(null,data.map(function(x){return Math.abs(Number(x.v))||0;}))||1;var muted=h.hsl('--muted-foreground');var color=opts.color||h.hsl('--primary');data.forEach(function(row,i){var cy=TOP+i*ROW_H+ROW_H/2;var len=Math.max(2,(Math.abs(Number(row.v))||0)/max*AREA_W);var t=h.el('text',{x:LABEL_W-14,y:cy,'text-anchor':'end','dominant-baseline':'middle','font-size':12,fill:muted},h.fit(row.label,26));svg.appendChild(t);svg.appendChild(h.el('rect',{x:LABEL_W,y:cy-BAR_H/2,width:len,height:BAR_H,rx:3,fill:(typeof color==='function'?color(row):color)}));svg.appendChild(h.el('text',{x:LABEL_W+len+10,y:cy,'dominant-baseline':'middle','font-size':12,'font-weight':600,fill:muted,style:'font-variant-numeric:tabular-nums'},valueFmt(row.v)));});};
+  areaLineChart=function(data,opts){opts=opts||{};var h=opts.helpers||chartHelpers();var svg=opts.svg;var points=data.points||[];var unit=data.unit;var valueFmt=opts.valueFmt||function(v){return h.fmt(v);};var axisFmt=opts.axisFmt||function(v){return unit==='rate'?(Math.round(v*10)/10)+'%':h.fmt(v);};var labelFmt=opts.labelFmt||function(t){return String(t);};var scale=opts.scale||function(v){return v==null?null:Number(v);};var L=52,R=20,T=22,B=42,PW=820,PH=260;var w=L+PW+R,hh=T+PH+B,n=points.length;svg.textContent='';svg.setAttribute('viewBox','0 0 '+w+' '+hh);svg.setAttribute('style','max-width:'+w+'px');svg.setAttribute('role','img');svg.setAttribute('aria-label',data.aria||'Metric over time');var muted=h.hsl('--muted-foreground'),border=h.hsl('--border');var ink=opts.color||h.hsl('--ramp-2');var vals=points.map(function(p){return scale(p.v,unit);});var known=vals.filter(function(v){return v!=null;});if(!known.length)return 0;var lo=Math.min.apply(null,known),hi=Math.max.apply(null,known);var pad=(hi-lo)*0.15||(Math.abs(hi)*0.1)||1;var min=lo-pad,max=hi+pad;var x=function(i){return n<2?L+PW/2:L+i*PW/(n-1);};var y=function(v){return T+(1-(v-min)/(max-min))*PH;};for(var g=0;g<=4;g++){var gy=T+g*PH/4,gv=max-g*(max-min)/4;svg.appendChild(h.el('line',{x1:L,y1:gy,x2:L+PW,y2:gy,stroke:border}));svg.appendChild(h.el('text',{x:L-10,y:gy+4,'text-anchor':'end','font-size':11,fill:muted,style:'font-variant-numeric:tabular-nums'},axisFmt(gv,unit)));}var runs=[],run=[];vals.forEach(function(v,i){if(v==null){if(run.length)runs.push(run);run=[];}else run.push({i:i,v:v});});if(run.length)runs.push(run);runs.forEach(function(r){if(r.length>1){var d=r.map(function(p,k){return(k?'L':'M')+x(p.i).toFixed(1)+' '+y(p.v).toFixed(1);}).join(' ');svg.appendChild(h.el('path',{d:d+' L'+x(r[r.length-1].i).toFixed(1)+' '+(T+PH)+' L'+x(r[0].i).toFixed(1)+' '+(T+PH)+' Z',fill:ink,'fill-opacity':'.14'}));svg.appendChild(h.el('path',{d:d,fill:'none',stroke:ink,'stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round'}));}});var step=Math.max(1,Math.ceil(n/10));points.forEach(function(p,i){if(i%step===0){svg.appendChild(h.el('text',{x:x(i),y:T+PH+20,'text-anchor':'middle','font-size':11,fill:muted},labelFmt(p.t)));}var v=vals[i];if(v==null)return;svg.appendChild(h.el('circle',{cx:x(i).toFixed(1),cy:y(v).toFixed(1),r:3.5,fill:ink}));});return vals.filter(function(v){return v==null;}).length;};
+}
+
+if (typeof baselineBars === 'undefined'){
+  baselineBars=function(svg,data,opts){opts=opts||{};var h=opts.helpers||chartHelpers();if(!data||!data.length)return;var LABEL_W=150,AREA_W=560,ROW_H=30,BAR_H=18,TOP=26,PAD=16;var w=LABEL_W+AREA_W+PAD,hh=TOP+data.length*ROW_H+10;svg.setAttribute('viewBox','0 0 '+w+' '+hh);svg.setAttribute('style','max-width:'+w+'px');svg.setAttribute('role','img');svg.setAttribute('aria-label',opts.aria||'Relative difference from network baseline');var vals=data.map(function(x){return Number(x.v)||0;});var lo=Math.min(0,Math.min.apply(null,vals)),hi=Math.max(0,Math.max.apply(null,vals));var span=(hi-lo)||1,pad=span*0.08;var min=lo-(lo<0?pad:0),max=hi+(hi>0?pad:0);var x=function(v){return LABEL_W+(v-min)/(max-min)*AREA_W;};var zeroX=x(0);var muted=h.hsl('--muted-foreground'),ink=h.hsl('--foreground'),defColor=h.hsl('--primary');svg.appendChild(h.el('line',{x1:zeroX,y1:TOP-8,x2:zeroX,y2:hh-6,stroke:muted,'stroke-width':1,'stroke-dasharray':'3 3'}));svg.appendChild(h.el('text',{x:zeroX,y:TOP-14,'text-anchor':'middle','font-size':11,'font-weight':600,fill:muted},opts.baselineLabel||'Network Baseline'));data.forEach(function(row,i){var v=Number(row.v)||0,cy=TOP+i*ROW_H+ROW_H/2;var xv=x(v),left=Math.min(zeroX,xv),width=Math.max(2,Math.abs(xv-zeroX));var col=row.color||(typeof opts.color==='function'?opts.color(row):opts.color)||defColor;var t=h.el('text',{x:LABEL_W-12,y:cy,'text-anchor':'end','dominant-baseline':'middle','font-size':12,fill:muted},h.fit(row.label,20));svg.appendChild(t);svg.appendChild(h.el('rect',{x:left,y:cy-BAR_H/2,width:width,height:BAR_H,rx:3,fill:col}));var lbl=(v>0?'+':'')+(Math.round(v*10)/10)+'%';var inside=width>42;svg.appendChild(h.el('text',{x:v>=0?(inside?xv-6:xv+6):(inside?xv+6:xv-6),y:cy,'dominant-baseline':'middle','text-anchor':v>=0?(inside?'end':'start'):(inside?'start':'end'),'font-size':11,'font-weight':600,fill:inside?'#fff':ink,style:'font-variant-numeric:tabular-nums'},lbl));});};
+}
+
+/* ---- sample data ---- */
+var H=chartHelpers();
+function draw(){
+  donutChart(document.getElementById('donut-host'), {
+    series:[{}],
+    rows:[{label:'Social',values:[41]},{label:'Email',values:[27]},{label:'CTV',values:[19]},{label:'Direct Mail',values:[13]}]
+  },{helpers:H,aria:'Share of reach',legendNode:document.getElementById('donut-legend')});
+
+  barChart(document.getElementById('bar'), [
+    {label:'New York DMA',v:82140},{label:'Los Angeles DMA',v:64500},{label:'Chicago DMA',v:41230},
+    {label:'Dallas–Ft. Worth',v:33800},{label:'Atlanta DMA',v:22110},{label:'Seattle–Tacoma',v:15960}
+  ],{helpers:H,aria:'Customers by market, largest first'});
+
+  if (typeof baselineBars === 'function'){
+    var C={apparel:'221 83% 53%',services:'262 60% 55%',ent:'330 81% 60%',food:'142 63% 45%',home:'25 84% 52%'};
+    baselineBars(document.getElementById('baseline'), [
+      {label:'Entertainment A',v:90,color:'hsl('+C.ent+')'},{label:'Apparel A',v:86,color:'hsl('+C.apparel+')'},
+      {label:'Services A',v:82,color:'hsl('+C.services+')'},{label:'Home A',v:80,color:'hsl('+C.home+')'},
+      {label:'Grocery A',v:78,color:'hsl('+C.food+')'},{label:'Apparel B',v:12,color:'hsl('+C.apparel+')'},
+      {label:'Apparel C',v:-18,color:'hsl('+C.apparel+')'},{label:'Services B',v:-34,color:'hsl('+C.services+')'}
+    ],{helpers:H,aria:'Over-index vs network baseline'});
+  }
+
+  var pts=[]; var base=1200;
+  for(var i=0;i<30;i++){ var v=Math.round(base+Math.sin(i/3)*180+i*22); if(i>=12&&i<=14)v=null; pts.push({t:i+1,v:v}); }
+  areaLineChart({points:pts,unit:'count',aria:'Signups by day'},{helpers:H,svg:document.getElementById('line'),labelFmt:function(t){return 'D'+t;}});
+}
+draw();
+</script>
+</body>
+</html>

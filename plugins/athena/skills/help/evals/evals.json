@@ -1,0 +1,155 @@
+{
+  "skill_name": "help",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/athena:help",
+      "expected_output": "Calls get_current_user_account exactly once before printing anything, then outputs three ordinary unfenced text lines: the returned Active ZMP site ID, the production account-switch sentence and URL, and the synchronized Athena MCP plugin version. It then prints the documentation line https://docs.zetaglobal.com/docs/athena-mcp as the first link, followed by the three-row skills table, the connector prerequisite, and the area table pairing each ZMP area with its Knowledge Base link and MCP capability, ending with exactly the line offering to open the ZMP in the built-in browser and navigate. It never uses a YAML/code fence, hardcodes the example site ID, or substitutes the account name.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "how do I create a campaign",
+      "expected_output": "Calls get_current_user_account exactly once and leads with the returned site ID plus the production account-selector line and https://app.zetaglobal.net/home before running a web search restricted to knowledgebase.zetaglobal.com. Prefers ZMP procedural pages over other products and fetches one or two article pages rather than answering from memory. Cites Quick Start: Building your First Email Campaign or Broadcast Campaigns, gives Campaigns > Broadcast > Create Campaign when supported by the fetched page, and does not cite Magento, CleverTap, PUG, GSWZ, or LiveIntent. Prints the source URL and asks before opening it in the browser.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "how do I build an audience",
+      "expected_output": "Calls get_current_user_account exactly once and leads with its returned site ID plus the production account-selector line and URL. Then runs a domain-scoped web search, follows a hub to a procedural child article when needed, and answers only from one or two fetched Zeta Knowledge Base pages under /kb/ or /zmp/. It does not cite a LiveIntent lookalike-audience page, prints the source URL, and asks before opening it.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "what is a trigger send",
+      "expected_output": "Calls get_current_user_account exactly once and leads with its returned site ID plus the production account-selector line and URL. Searches and fetches only from knowledgebase.zetaglobal.com. Answers with citations only when the fetched page supports the definition; otherwise says the Knowledge Base does not appear to cover it, links the root and closest Campaigns area, and does not answer from model memory.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "how do I fix a 500 error in the campaign builder",
+      "expected_output": "Calls get_current_user_account exactly once and leads with its returned site ID plus the production account-selector line and URL. Searches the Zeta Knowledge Base but, when no relevant procedural page supports a fix, declines cleanly, links the Knowledge Base root and Campaigns area, and invents no troubleshooting steps. It does not call any other gateway tool.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "who is my highest-value audience",
+      "expected_output": "Calls get_current_user_account exactly once and shows the returned site ID plus the production account-selector line and URL, then routes to opportunities-customer-pulse-executive-briefing instead of searching the Knowledge Base or calling any other gateway tool itself.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "show me the docs for campaigns",
+      "expected_output": "Calls get_current_user_account exactly once and leads with its returned site ID plus the production account-selector line and URL, then uses a domain-scoped search. If the top result is the /kb/campaigns hub, follows a relevant child article and cites that article for any procedural answer rather than presenting the hub as step-by-step guidance. It may also provide the hub as navigation, prints every source URL, and asks before opening one.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "how do I configure a data flow",
+      "expected_output": "Calls get_current_user_account exactly once and leads with its returned site ID plus the production account-selector line and URL. Every Knowledge Base source URL printed in a passing run is on knowledgebase.zetaglobal.com and returns HTTP 200. If web tools are unavailable, says so, prints the static area table, and stops without an offline fallback or answer from memory.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "what account am I in",
+      "expected_output": "Calls get_current_user_account exactly once, does not search the web, and outputs three ordinary unfenced text lines with returned site ID, production account-switch sentence and URL, and synchronized Athena MCP plugin version. It does not show the catalog, hardcode example-site-0001, or infer an account from conversation history.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "which account is logged in",
+      "expected_output": "Calls get_current_user_account exactly once and uses only that response. On success, outputs the three ordinary unfenced status lines. If the tool is unavailable, authentication fails, or no site ID is returned, the text uses site ID unavailable and is followed only by the current client's connection/authentication step; it does not guess or search the Knowledge Base.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "show Athena help and include diagnostics I can send to support",
+      "expected_output": "Calls get_current_user_account exactly once, prints the three plain status lines, then reports troubleshooting detail as ordinary prose: whether the account lookup succeeded, any required Athena tool missing from the live list, and the exact safe error message plus any gateway request, correlation, or trace ID labelled by its returned field name. It never prints OAuth client IDs, tokens, authorization headers, cookies, filesystem paths, email addresses, or raw tool payloads, and makes no extra gateway call to gather detail.",
+      "files": []
+    },
+    {
+      "id": 13,
+      "prompt": "what can the Athena plugin do",
+      "expected_output": "Calls get_current_user_account exactly once, begins with three ordinary unfenced status lines, then prints the three-row skills table and the area table with its MCP capability column.",
+      "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "what version of the Athena MCP plugin is this?",
+      "expected_output": "Calls get_current_user_account exactly once and reports the Athena MCP plugin version synchronized from .version-bump.json by scripts/sync-version.mjs. The help skill contains no manually maintained release number outside that sync target, and node scripts/sync-version.mjs --check fails if the help text drifts from the plugin manifests.",
+      "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "what MCP tools do I have",
+      "expected_output": "Stays in Catalog mode and names the MCP capability families from references/mcp-map.md with their counts, reconciled against the live tool list, rather than dumping every tool or pasting JSON input schemas. Capabilities absent from the live list are reported as not exposed in this session rather than invented, and if the client cannot enumerate tools it says enumeration was unavailable.",
+      "files": []
+    },
+    {
+      "id": 16,
+      "prompt": "what is in the customer intelligence capability",
+      "expected_output": "Loads references/mcp-map.md and prints only the Customer intelligence table, reconciled against the live tool list, with each tool marked Read or Write. It does not dump the other capability tables or raw schemas. It never substitutes audience_solutions_data, which is market-level third-party data, for first-party customer data.",
+      "files": []
+    },
+    {
+      "id": 17,
+      "prompt": "open the ZMP",
+      "expected_output": "Calls get_current_user_account exactly once, loads references/zmp-nav.md, and resolves the ZMP host from the gateway backing the server that answered that call, so a production connector opens https://app.zetaglobal.net and a preprod or named-branch connector opens that environment's host. With no screen named it opens /home in the host's built-in browser rather than a system browser, treats the request itself as consent, and names the resolved URL. If a sign-in page appears it asks the user to log in and never attempts credentials.",
+      "files": []
+    },
+    {
+      "id": 18,
+      "prompt": "take me to Insights Studio",
+      "expected_output": "Calls get_current_user_account exactly once, then navigates immediately to /reports/insights-studio on the resolved environment host in the built-in browser without asking for confirmation, since take me to is consent. Reports the UI path Analytics > Insights Studio along with the URL, and offers one adjacent screen. It uses only a path from references/zmp-nav.md and does not guess one.",
+      "files": []
+    },
+    {
+      "id": 21,
+      "prompt": "/athena:help",
+      "expected_output": "Every Open in ZMP cell is a full absolute clickable URL beginning with https:// and the resolved environment host, never a bare path like /reports/insights-studio and never wrapped in inline code or backticks. On a production connector the hosts are app.zetaglobal.net. The customers row links Customer Pulse directly. The catalog ends on the exact closer line.",
+      "files": []
+    },
+    {
+      "id": 19,
+      "prompt": "open GeoExplorer for me",
+      "expected_output": "Recognizes that the GeoExplorer Opportunity card resolves to an account-specific numeric route, so it opens the /opportunities hub on the resolved host and names the GeoExplorer card to click instead of constructing a numeric URL. It does not invent a GEO MCP tool because that capability is not exposed by this connector.",
+      "files": []
+    },
+    {
+      "id": 22,
+      "prompt": "how do I get access to Athena MCP?",
+      "expected_output": "Prints https://docs.zetaglobal.com/docs/athena-mcp as the first link, ahead of any Knowledge Base or ZMP URL. Explains that access is granted by Zeta per ZMP account and is not self-serve, that installing the plugin does not grant it, that an ungranted account can authenticate successfully and still see no tools, and that Zeta also controls which tools an account sees. Directs the user to their Zeta Global account team. It does not imply the plugin install or a successful OAuth sign-in confers access.",
+      "files": []
+    },
+    {
+      "id": 23,
+      "prompt": "Ask Athena to show me the strongest dog-owner audience options on this ZMP page",
+      "expected_output": "Uses Athena Chat mode after exactly one get_current_user_account call. Reuses the authenticated ZMP tab on the resolved environment host, preserves the current page for context, snapshots URL, heading, and the prior response boundary, and if needed opens the panel by clicking the Athena button in the left header. It faithfully submits the requested query through the accessible Ask me anything composer and arrow-up control, waits for Stop Loading to disappear, and reads only the completed new response. It may answer routine clarifications autonomously when directly implied, but never invents audience criteria. It then re-reads URL, heading, and relevant visible page state, relays Athena's response, and distinguishes verified navigation or read-only results from Athena's unverified claims.",
+      "files": []
+    },
+    {
+      "id": 24,
+      "prompt": "Ask Athena to build and launch an email campaign for this audience",
+      "expected_output": "Does not forward the request as an action because the plugin is read-only. It explains that it cannot build or launch the campaign and offers either read-only instructions from Athena or navigation to the relevant ZMP screen. It does not request confirmation as a route around the read-only boundary and does not create, change, send, publish, or delete anything in ZMP.",
+      "files": []
+    },
+    {
+      "id": 25,
+      "prompt": "Ask Athena to explain what I can do on this ZMP screen",
+      "expected_output": "Uses the resolved built-in-browser ZMP tab and checks for an authenticated app shell. If a sign-in page, access error, or missing app shell blocks access, it asks the user to log in in that same browser tab and tell it when ready; it never enters credentials, switches browsers, falls back to web search, or mistakes a closed Athena panel for an unauthenticated session. Once authenticated, it resumes the ask-read-relay workflow without requiring the user to babysit routine follow-ups.",
+      "files": []
+    },
+    {
+      "id": 26,
+      "prompt": "Earlier in this same task, Athena help already printed the active site ID, account-switch instructions, and plugin version. Now: Ask Athena to suggest another refinement for this segment.",
+      "expected_output": "Calls get_current_user_account exactly once for current routing but does not repeat the three-line account/version preamble, because it was already shown in this task. It proceeds directly into Athena Chat mode. If the live site ID differs from the one previously shown, it prints only one concise Active ZMP site ID changed line before continuing. It does not treat this new user message as a new task. Explicit later account, version, or diagnostics requests still show the requested status information.",
+      "files": []
+    },
+    {
+      "id": 27,
+      "prompt": "Ask Athena to suggest audience criteria from my dog-owner segment. The automatically selected browser claimed a ZMP tab, but safe page inspection timed out twice. I did not explicitly choose Chrome or any external browser.",
+      "expected_output": "Does not ask the user to reload Chrome after the first timeout. It discards the stale tab binding, reacquires the current matching ZMP tab from the same browser, and retries one cheap inspection. After the fresh binding also fails, it tries the in-app browser once because the user did not explicitly select an external browser, reads that browser's complete documentation, obtains its own ZMP tab, and continues the Athena Chat workflow there. It asks for reload or sign-in only if the in-app attempt is also unavailable or visibly unauthenticated. It never switches away from a browser the user explicitly selected.",
+      "files": []
+    }
+  ]
+}

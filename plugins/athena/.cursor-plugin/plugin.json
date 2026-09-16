@@ -1,0 +1,22 @@
+{
+  "name": "athena",
+  "displayName": "Athena by Zeta",
+  "version": "0.6.28",
+  "description": "Predictive answers, real-time activation and measurement in one adaptive command center.",
+  "author": {
+    "name": "Zeta Global"
+  },
+  "keywords": [
+    "zeta",
+    "athena",
+    "marketing",
+    "analytics",
+    "mcp",
+    "customer-pulse",
+    "insights-studio",
+    "location-intelligence"
+  ],
+  "logo": "assets/athena-icon.png",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

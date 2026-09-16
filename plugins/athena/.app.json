@@ -1,0 +1,9 @@
+{
+  "apps": {
+    "athena": {
+      "id": "asdk_app_6a91db4b893c8191aec494e8304a07d3",
+      "category": "Marketing intelligence",
+      "required": true
+    }
+  }
+}

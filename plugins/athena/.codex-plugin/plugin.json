@@ -1,0 +1,47 @@
+{
+  "name": "athena",
+  "version": "0.6.28",
+  "description": "Predictive answers, real-time activation and measurement in one adaptive command center.",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "apps": "./.app.json",
+  "author": {
+    "name": "Zeta Global"
+  },
+  "homepage": "https://zetaglobal.com/",
+  "repository": "https://github.com/zg-athena/athena-skills",
+  "license": "SEE LICENSE IN LICENSE",
+  "keywords": [
+    "zeta",
+    "athena",
+    "marketing",
+    "analytics",
+    "mcp",
+    "customer-pulse",
+    "insights-studio",
+    "location-intelligence"
+  ],
+  "interface": {
+    "displayName": "Athena by Zeta",
+    "shortDescription": "Marketing intelligence you can act on",
+    "longDescription": "Predictive answers, real-time activation and measurement in one adaptive command center.",
+    "developerName": "Zeta Global",
+    "category": "Analytics",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "websiteURL": "https://zetaglobal.com/",
+    "privacyPolicyURL": "https://zetaglobal.com/privacy-policy/",
+    "termsOfServiceURL": "https://zetaglobal.com/zeta-platform-agreement/",
+    "defaultPrompt": [
+      "Give me a customer pulse briefing.",
+      "Where are our customers concentrated?",
+      "Show campaign performance."
+    ],
+    "brandColor": "#3F4DB8",
+    "composerIcon": "./assets/athena-icon.png",
+    "logo": "./assets/athena-icon.png",
+    "screenshots": []
+  }
+}

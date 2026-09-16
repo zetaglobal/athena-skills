@@ -1,0 +1,289 @@
+                    ZETA SOURCE-AVAILABLE LICENSE 1.0
+                            (USE-ONLY LICENSE)
+
+Copyright (c) 2026 Zeta Global Corp. All rights reserved.
+
+This license is structured after the Elastic License 2.0 but grants a
+substantially narrower set of rights. It is not an open-source license, and it
+is not a modify-and-redistribute license. It is a use-only source-available
+license: you can read the source and run it, and you may not modify it,
+create derivative works of it, or distribute it.
+
+Applies to: the Athena by Zeta skills, report templates, and brand assets
+identified as Tier 2 in the LICENSE file at the root of this repository.
+
+
+1. ACCEPTANCE
+
+By using the software, you agree to all of the terms and conditions below. If
+you do not agree, you have no license to the software.
+
+
+2. COPYRIGHT LICENSE
+
+Subject to the limitations and conditions below, the licensor grants you a
+non-exclusive, royalty-free, worldwide, non-sublicensable, non-transferable,
+revocable license to:
+
+  (a) use and internally display the software;
+
+  (b) make and retain copies of the software solely as reasonably necessary to
+      install, configure, update, and run it on devices and in host
+      environments controlled by you or your company, including copies made by
+      cloning this repository and by running the packaging scripts provided
+      with it; and
+
+  (c) generate output using the software, and use that output, subject to
+      Section 6.
+
+No other rights are granted. In particular, and without limiting Section 3,
+this license does not grant you the right to modify the software, to prepare
+derivative works of it, to distribute or make it available to any third party,
+or to sublicense it.
+
+
+3. LIMITATIONS
+
+3.1 Authorized use only. You may use the software only in connection with a ZMP
+account that Zeta has authorized to access Athena by Zeta MCP, and only for your
+own internal business purposes or, if you are acting as a service provider to
+such an account holder, for that account holder's internal business purposes. If
+your authorization to access Athena by Zeta MCP ends, your license to use the
+software ends with it.
+
+3.2 Enterprise host accounts only; no personal accounts. You may install the
+software into, and connect Athena by Zeta MCP from, only an enterprise, team, or
+business-tier account of a supported host application that is provisioned,
+owned, and administered by your company, that is subject to your company's
+administrative controls, and that is governed by an agreement between your
+company and the host provider.
+
+You may not install the software into, or connect Athena by Zeta MCP from, a
+personal, individual, consumer, free, trial, student, hobbyist, or
+personally-subscribed account of any host application, and you may not use a
+personal email address or personal credential to authenticate a host
+application through which the software or Athena by Zeta MCP is reached. This
+applies to every supported host, including but not limited to Claude Code,
+Claude Desktop, ChatGPT, Codex, GitHub Copilot, Cursor, and any other Model
+Context Protocol client.
+
+Before connecting any host application, you are responsible for confirming that
+your company's agreement with that host provider prohibits the provider from
+using your inputs and outputs to train its models, and that the host account's
+data-retention and administrative settings are consistent with your obligations
+to Zeta and to your own customers. Nothing in this license authorizes you to
+route ZMP data through a host account that does not meet these requirements.
+
+3.3 No modification. You may not modify, adapt, translate, localize, extend,
+reconfigure, or otherwise alter the software, and you may not prepare
+derivative works of it. This includes editing skill instruction files, altering
+prompt logic, orchestration sequences, or tool-selection rules, changing report
+templates or their styling, and substituting or supplementing brand assets.
+
+Configuring the software through the settings and inputs it exposes, and asking
+it questions in natural language, is use and not modification.
+
+3.4 No distribution or publication. You may not distribute, publish, transmit,
+post, sublicense, sell, rent, lease, lend, assign, transfer, or otherwise make
+the software available to any third party, in source or any other form, whether
+or not for a fee. You may not publish the software or any part of it to a public
+repository, package registry, marketplace, model context, dataset, or training
+corpus. Copies permitted under Section 2(b) may be shared only within your
+company and only with personnel who are bound by these terms.
+
+3.5 No hosted or managed service. You may not provide the software to third
+parties as a hosted or managed service, where the service provides users with
+access to any substantial set of the features or functionality of the software.
+
+3.6 No competing offering. You may not use the software, or any information
+about the software's prompt logic, orchestration sequences, tool-selection
+rules, data taxonomy, or interpretation rules, to develop, market, or offer a
+product or service that competes with Athena by Zeta, Athena by Zeta MCP, or the
+Zeta Marketing Platform. You may not use the software or its output to train,
+fine-tune, evaluate, or otherwise develop any machine learning model.
+
+3.7 No circumvention of access controls. You may not move, change, disable, or
+circumvent any authentication, authorization, entitlement, or access-control
+functionality in the software, in Athena by Zeta MCP, or in the Athena by Zeta
+MCP gateway, and you may not remove or obscure any functionality that such
+controls protect. You may not use the software to access any tool, dataset, ZMP
+account, or site identifier that Zeta has not entitled to your account.
+
+3.8 No alteration of notices. You may not alter, remove, or obscure any
+licensing, copyright, provenance, confidentiality, or other notices of the
+licensor in the software or in any copy of it, including notices rendered in
+output generated by the software.
+
+3.9 Trademarks. This license does not grant you any right to use the licensor's
+trademarks, service marks, trade names, logos, or product names. See TRADEMARK.md
+for what is and is not permitted.
+
+3.10 Confidential information. This license does not grant you any right in the
+licensor's confidential or proprietary information, and does not reduce, waive,
+or supersede any confidentiality obligation you owe the licensor under any other
+agreement.
+
+
+4. PATENTS
+
+The licensor grants you a license, under any patent claims the licensor can
+license, or becomes able to license, to use the software, in each case subject
+to the limitations and conditions in this license. If you or your company make
+any written claim that the software infringes or contributes to infringement of
+any patent, your patent license for the software granted under these terms ends
+immediately. If your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+
+5. NOTICES
+
+5.1 Every copy of the software that you make under Section 2(b) must retain all
+copyright, license, patent, trademark, provenance, and attribution notices
+exactly as provided, including this license, the LICENSE file, NOTICE, and
+TRADEMARK.md.
+
+5.2 You must ensure that every person to whom you make the software available
+within your company has notice of and is bound by these terms.
+
+5.3 You may not remove, suppress, or alter any Zeta attribution, provenance, or
+confidentiality notice that the software renders in the output it generates.
+
+
+6. OUTPUT AND DATA
+
+6.1 The software generates output from data returned by Athena by Zeta MCP.
+Nothing in this license grants you any right in that data. Your rights and
+obligations regarding ZMP data, including any confidentiality, security,
+retention, and permitted-use terms, are governed exclusively by your agreement
+with Zeta Global Corp.
+
+6.2 Output generated by the software may contain confidential information,
+including account and site identifiers, audience and segment names, campaign and
+dataset labels, and performance metrics. The software applies no technical
+restriction on copying, exporting, or sharing that output. You are responsible
+for handling it in accordance with your agreement with Zeta Global Corp. and
+applicable law.
+
+6.3 Output generated by the software combines figures returned by Athena by Zeta
+MCP with narrative text generated by a third-party foundation model. Narrative
+text is model-generated, is not verified by Zeta, and is not a Zeta statement of
+fact. You are responsible for reviewing output before relying on it or
+distributing it.
+
+
+7. NO OTHER RIGHTS
+
+These terms do not imply any licenses other than those expressly granted in
+these terms. All rights not expressly granted are reserved by the licensor. No
+right is granted by implication, estoppel, exhaustion, or course of dealing.
+
+
+8. NO CONTRIBUTIONS
+
+The software is developed solely by the licensor. This repository does not
+accept contributions from licensees, and no licensee has any right to submit
+them.
+
+8.1 You may not submit pull requests, patches, commits, branches, code, prompt
+text, report templates, brand assets, or any other content to this repository or
+to any Zeta repository, and you may not open a pull request against it. Zeta
+will close any pull request received from a licensee without review.
+
+8.2 Do not post customer data, ZMP data, generated briefings, credentials,
+tokens, logs, account identifiers, or site identifiers to any Zeta repository,
+issue, or discussion.
+
+8.3 If, despite Section 8.1, you send the licensor any content, or if you send
+the licensor any feedback, suggestion, bug report, or feature request relating
+to the software, then you grant the licensor a perpetual, worldwide,
+non-exclusive, royalty-free, irrevocable, sublicensable, transferable license to
+use, reproduce, modify, distribute, prepare derivative works of, and otherwise
+exploit that content or feedback for any purpose and without obligation,
+attribution, compensation, or confidentiality to you. You represent that you
+have the right to grant that license and that the content is not subject to any
+third party's rights or to any confidentiality obligation. Zeta is under no
+obligation to review, use, respond to, or return anything you send.
+
+8.4 Support requests, defect reports, and change requests should be directed to
+your Zeta Global account team, not to this repository.
+
+
+9. TERMINATION
+
+If you use the software in violation of these terms, such use is not licensed,
+and your licenses will automatically terminate. If the licensor provides you
+with a notice of your violation, and you cease all violation of this license no
+later than 30 days after you receive that notice, your licenses will be
+reinstated retroactively. However, if you violate these terms after such
+reinstatement, any additional violation of these terms will cause your licenses
+to terminate automatically and permanently.
+
+The licensor may also terminate this license at any time on notice, or without
+notice if your authorization to access Athena by Zeta MCP ends. On termination
+you must stop using the software and delete all copies of it, including copies
+made under Section 2(b) and copies held in host application plugin directories,
+marketplace caches, and packaged archives.
+
+Sections 3.6, 3.8, 3.10, 5.3, 6, 7, 8, 10, 11, and 12 survive termination.
+
+
+10. BETA; NO WARRANTY
+
+The software is a Beta offering. It may change, break, or be withdrawn without
+notice. As far as the law allows, the software comes as is, without any warranty
+or condition of any kind, express or implied, including any warranty of title,
+non-infringement, merchantability, fitness for a particular purpose, accuracy, or
+uninterrupted or error-free operation. The licensor does not warrant that output
+generated by the software is accurate, complete, or suitable for any purpose.
+
+
+11. NO LIABILITY
+
+As far as the law allows, the licensor will not be liable to you for any damages
+arising out of these terms or the use or nature of the software, under any kind
+of legal claim, including any direct, indirect, special, incidental, punitive, or
+consequential damages, and including damages for lost profits, lost revenue, lost
+goodwill, business interruption, or loss or corruption of data, even if the
+licensor has been advised of the possibility of such damages.
+
+
+12. RELATIONSHIP TO OTHER AGREEMENTS
+
+These terms govern the software only. They do not grant access to Athena by Zeta
+MCP, to any ZMP account, or to any Zeta data, and they do not amend any other
+agreement between you and Zeta Global Corp. If these terms conflict with a
+written agreement between you and Zeta Global Corp. covering the Zeta Marketing
+Platform or Athena by Zeta, that agreement controls.
+
+
+13. DEFINITIONS
+
+The licensor is Zeta Global Corp.
+
+The software is the material the licensor makes available under these terms,
+including any portion of it, as identified as Tier 2 in the LICENSE file at the
+root of this repository.
+
+you refers to the individual or entity agreeing to these terms. your company is
+any legal entity, sole proprietorship, or other kind of organization that you
+work for, plus all organizations that have control over, are under the control
+of, or are under common control with that organization. control means ownership
+of substantially all the assets of an entity, or the power to direct its
+management and policies by vote, contract, or otherwise. Control can be direct
+or indirect.
+
+your licenses are all the licenses granted to you for the software under these
+terms. use means anything you do with the software requiring one of your
+licenses. trademark means trademarks, service marks, and similar rights.
+
+host application means any client application through which the software is
+installed or run, or through which Athena by Zeta MCP is reached, including
+Claude Code, Claude Desktop, ChatGPT, Codex, GitHub Copilot, Cursor, and any
+other Model Context Protocol client.
+
+output means any briefing, report, summary, answer, chart, export, or file
+generated by or with the software.
+
+ZMP means the Zeta Marketing Platform. Athena by Zeta MCP means the
+Zeta-operated Model Context Protocol service reachable through the Zeta gateway,
+including its tools and entitlement system.
