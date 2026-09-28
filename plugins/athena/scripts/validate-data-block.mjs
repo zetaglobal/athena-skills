@@ -1385,6 +1385,21 @@ function powershellBins() {
   return [...new Set(bins.filter((bin) => isAbsolute(bin)))];
 }
 
+// Helpers read only VDB_*. Pass the few variables a process needs to start,
+// never the whole environment, so tokens in the user's shell stay in Node.
+const HELPER_ENV_KEYS = [
+  "PATH", "HOME", "TMPDIR", "LANG", "LC_ALL",
+  "SystemRoot", "WINDIR", "SystemDrive", "TEMP", "TMP", "ComSpec", "PATHEXT", "PSModulePath",
+];
+
+function helperBaseEnv() {
+  const env = {};
+  for (const key of HELPER_ENV_KEYS) {
+    if (process.env[key] !== undefined) env[key] = process.env[key];
+  }
+  return env;
+}
+
 // Node has no openat. Linux uses /proc/self/fd as openat. macOS has neither
 // /proc nor /dev/fd lookup, so inherit the trusted root directory fd and walk
 // VDB_REL (JSON array of components). Prefer /usr/bin/perl (stock macOS,
@@ -1638,7 +1653,7 @@ function readValidatedFdOpenat(filePath, root, rootFd) {
     throw new Error("path is outside the working directory");
   }
   const env = {
-    ...process.env,
+    ...helperBaseEnv(),
     VDB_REL: JSON.stringify(parts),
     PYTHONPATH: "",
     PYTHONHOME: "",
@@ -1679,7 +1694,7 @@ function readValidatedFdOpenat(filePath, root, rootFd) {
 function runWinHandleHelper(filePath, root, rootFd, rel) {
   const encoded = Buffer.from(WIN_HANDLE_SCRIPT, "utf16le").toString("base64");
   const args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded];
-  const baseEnv = { ...process.env, VDB_PATH: filePath, VDB_ROOT: root, VDB_REL: rel || "" };
+  const baseEnv = { ...helperBaseEnv(), VDB_PATH: filePath, VDB_ROOT: root, VDB_REL: rel || "" };
   const attempts = [];
   if (typeof rootFd === "number" && rootFd >= 0) {
     // Keep the trusted root handle. A pathname retry of VDB_ROOT after this

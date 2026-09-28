@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Predictive answers, real-time activation and measurement in one adaptive command center.",
-    "version": "0.6.28"
+    "version": "0.6.29"
   },
   "plugins": [
     {
       "name": "athena",
       "source": "./plugins/athena",
       "description": "Predictive answers, real-time activation and measurement in one adaptive command center.",
-      "version": "0.6.28",
+      "version": "0.6.29",
       "category": "analytics",
       "keywords": [
         "zeta",

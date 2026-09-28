@@ -1,6 +1,6 @@
 {
   "name": "athena",
-  "version": "0.6.28",
+  "version": "0.6.29",
   "description": "Predictive answers, real-time activation and measurement in one adaptive command center.",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
