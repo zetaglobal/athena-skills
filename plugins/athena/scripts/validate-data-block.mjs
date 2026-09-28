@@ -147,14 +147,14 @@ function editDistance(a, b) {
   return prev[n];
 }
 
-function unknownKeyMessage(key, allowed) {
-  const hint = KEY_HINTS[key];
+function unknownKeyMessage(field, allowed) {
+  const hint = KEY_HINTS[field];
   let near = null, best = Infinity;
   for (const cand of allowed) {
-    const d = editDistance(key.toLowerCase(), cand.toLowerCase());
+    const d = editDistance(field.toLowerCase(), cand.toLowerCase());
     if (d < best && d <= Math.max(2, Math.floor(cand.length / 3))) { best = d; near = cand; }
   }
-  const parts = [`unknown key '${key}' — the template reads none of it, so it would be silently dropped.`];
+  const parts = [`unknown field '${field}' — the template reads none of it, so it would be silently dropped.`];
   if (hint) parts.push(hint);
   else if (near) parts.push(`Did you mean '${near}'?`);
   parts.push(`Allowed here: ${allowed.join(", ")}.`);
@@ -444,6 +444,8 @@ const SCHEMAS = {
   },
 };
 
+const SKILL_IDS = Object.keys(SCHEMAS);
+
 function RANGE_SHAPE() {
   return {
     start: { type: "string", required: true, nonEmpty: true },
@@ -556,12 +558,12 @@ function fieldProvenance(manifest, ctx) {
         `block '${entry.block}' matches no verified block family and no explicit \`columns\` were supplied, so its fields could not be checked. Add the response's column list to the manifest entry.`);
       continue;
     }
-    for (const [key, label] of [["valueField", "charted value"], ["labelField", "row label"]]) {
-      const f = entry[key];
+    for (const [field, label] of [["valueField", "charted value"], ["labelField", "row label"]]) {
+      const f = entry[field];
       if (f == null) continue;
-      if (typeof f !== "string") { ctx.err("R-FIELD", `${path}.${key}`, `${key} must be a column name string.`); continue; }
+      if (typeof f !== "string") { ctx.err("R-FIELD", `${path}.${field}`, `${field} must be a column name string.`); continue; }
       if (!columns.includes(f)) {
-        const suggestion = key === "valueField" ? (fam && fam.chartField) : (fam && fam.labelField);
+        const suggestion = field === "valueField" ? (fam && fam.chartField) : (fam && fam.labelField);
         const hint = KEY_HINTS[f];
         ctx.err("R-FIELD", path,
           `${label} references \`${f}\`, which ${entry.block} does not return; its columns are ${columns.join(", ")}.` +
@@ -608,16 +610,6 @@ function alignment(rows, rowsPath, segCount, ctx) {
   });
 }
 
-// Is the array a distribution (bands that partition the audience)?
-function looksLikeDistribution(rows) {
-  if (!rows || rows.length < 2) return false;
-  const perSeg = [];
-  for (const r of rows) (r.values || []).forEach((v, i) => {
-    if (typeof v === "number" && Number.isFinite(v)) perSeg[i] = (perSeg[i] || 0) + v;
-  });
-  return perSeg.some((s) => s > 85 && s < 115);
-}
-
 function percentScaleChecks(name, rows, path, ctx) {
   const vals = finiteValues(rows, (r) => r.values);
   if (!vals.length) return;
@@ -627,30 +619,6 @@ function percentScaleChecks(name, rows, path, ctx) {
   if (max > 0 && max <= 1 && vals.length >= 2) {
     ctx.err("R-SCALE", path,
       `${name} looks like unscaled fractions — every value is <= 1 (max ${max}) — but the chart labels every bar with '%', so a real ${(max * 100).toFixed(1)}% would render as ${max}%. Multiply by 100 before filling the block: 0.458062 is 45.8%, not 0.458% (bb9e0ad). If these genuinely are all sub-one-percent figures, scale them anyway and say so in \`provenance\`; unscaled they are indistinguishable from the bug.`);
-  }
-}
-
-function baselineChecks(key, baseline, rows, ctx) {
-  if (baseline == null) return;
-  if (typeof baseline !== "number" || !Number.isFinite(baseline)) return; // typed elsewhere
-  const vals = finiteValues(rows, (r) => r.values);
-  if (!vals.length) {
-    ctx.err("R-BASELINE", key, `${key} is set but the chart it belongs to has no rows, so a dashed rule would be drawn against nothing. Omit the key.`);
-    return;
-  }
-  const max = Math.max(...vals), min = Math.min(...vals);
-  if (looksLikeDistribution(rows)) {
-    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-    if (baseline < mean / 2 || baseline > mean * 2) {
-      ctx.err("R-BASELINE", key,
-        `${baseline} is not on the same scale as the bars it would be drawn against (they run ${min}-${max} and a uniform baseline across ${rows.length} bands would be about ${Number(mean.toFixed(1))}). This is the \`network_baseline\` trap: it was 5 while age bands ran 2-22%, because it baselines the block's own Value column, not the distribution. Omit ${key} unless you have a same-scale number — the template then hides the dashed rule and its caption (4b921fb).`);
-    }
-    return;
-  }
-  const span = (max - min) || Math.abs(max) || 1;
-  if (baseline < min - span || baseline > max + span) {
-    ctx.err("R-BASELINE", key,
-      `${baseline} falls far outside the range of the series it would be drawn against (${min}-${max}), so the dashed rule lands off the plot or flattens every bar. Omit ${key} unless the baseline is on the bars' own scale (4b921fb).`);
   }
 }
 
@@ -808,7 +776,8 @@ function studioSemantic(d, ctx) {
     for (const c of cols) {
       if (!c || !c.key) continue;
       const colVals = rows.map((r) => r && r.cells && typeof r.cells === "object" ? r.cells[c.key] : undefined);
-      unitRangeChecks(c.unit, colVals, `breakdown.cells.${c.key}`, `column '${c.label}'`, ctx);
+      const colId = c.key;
+      unitRangeChecks(c.unit, colVals, `breakdown.cells.${colId}`, `column '${c.label}'`, ctx);
     }
     const dup = new Set(keys.filter(Boolean));
     if (dup.size !== keys.filter(Boolean).length) ctx.err("R-DUPLICATE", "breakdown.columns", `two columns share a \`key\`; the later one silently overwrites the earlier in every row's \`cells\`.`);
@@ -860,28 +829,28 @@ export function validateDataBlock(data, opts = {}) {
     warn: (rule, path, message) => warnings.push({ rule, path, message }),
   };
 
-  let key = opts.skill || null;
-  if (key && !SCHEMAS[key]) {
-    return { ok: false, skill: null, errors: [{ rule: "R-SKILL", path: "(root)", message: `unknown --skill '${key}'. Known: ${Object.keys(SCHEMAS).join(", ")}.` }], warnings };
+  let skillId = opts.skill || null;
+  if (skillId && !SCHEMAS[skillId]) {
+    return { ok: false, skill: null, errors: [{ rule: "R-SKILL", path: "(root)", message: `unknown --skill '${skillId}'. Known: ${SKILL_IDS.join(", ")}.` }], warnings };
   }
-  if (!key) key = Object.keys(SCHEMAS).find((k) => SCHEMAS[k].detect(data)) || null;
-  if (!key) {
+  if (!skillId) skillId = Object.keys(SCHEMAS).find((k) => SCHEMAS[k].detect(data)) || null;
+  if (!skillId) {
     return {
       ok: false, skill: null, warnings,
-      errors: [{ rule: "R-SKILL", path: "(root)", message: `could not tell which skill this data block belongs to. Set \`product\` to "Customer Pulse" or "Insights Studio", or pass --skill (${Object.keys(SCHEMAS).join(", ")}).` }],
+      errors: [{ rule: "R-SKILL", path: "(root)", message: `could not tell which skill this data block belongs to. Set \`product\` to "Customer Pulse" or "Insights Studio", or pass --skill (${SKILL_IDS.join(", ")}).` }],
     };
   }
 
-  const schema = SCHEMAS[key];
+  const schema = SCHEMAS[skillId];
   crossCutting(data, ctx);
   checkShape(data, schema.shape, "", ctx);
   schema.semantic(data, ctx);
   fieldProvenance(opts.source, ctx);
   // An empty or partial manifest must not satisfy a required check — otherwise
   // `--source empty.json` reopens exactly the hole that making it required closed.
-  if (opts.source) requiredProvenance(data, key, opts.source, ctx);
+  if (opts.source) requiredProvenance(data, skillId, opts.source, ctx);
 
-  return { ok: errors.length === 0, skill: key, errors, warnings };
+  return { ok: errors.length === 0, skill: skillId, errors, warnings };
 }
 
 // Throws on any error. For programmatic use right before writing the artifact.
@@ -1386,18 +1355,24 @@ function powershellBins() {
 }
 
 // Helpers read only VDB_*. Pass the few variables a process needs to start,
-// never the whole environment, so tokens in the user's shell stay in Node.
-const HELPER_ENV_KEYS = [
-  "PATH", "HOME", "TMPDIR", "LANG", "LC_ALL",
-  "SystemRoot", "WINDIR", "SystemDrive", "TEMP", "TMP", "ComSpec", "PATHEXT", "PSModulePath",
-];
-
+// never the whole environment. Each one is named here, not looked up at run
+// time. Node skips entries whose value is undefined.
 function helperBaseEnv() {
-  const env = {};
-  for (const key of HELPER_ENV_KEYS) {
-    if (process.env[key] !== undefined) env[key] = process.env[key];
-  }
-  return env;
+  return {
+    PATH: process.env.PATH,
+    HOME: process.env.HOME,
+    TMPDIR: process.env.TMPDIR,
+    LANG: process.env.LANG,
+    LC_ALL: process.env.LC_ALL,
+    SystemRoot: process.env.SystemRoot,
+    WINDIR: process.env.WINDIR,
+    SystemDrive: process.env.SystemDrive,
+    TEMP: process.env.TEMP,
+    TMP: process.env.TMP,
+    ComSpec: process.env.ComSpec,
+    PATHEXT: process.env.PATHEXT,
+    PSModulePath: process.env.PSModulePath,
+  };
 }
 
 // Node has no openat. Linux uses /proc/self/fd as openat. macOS has neither
@@ -2551,7 +2526,7 @@ function main(argv) {
 Validates an assembled artifact data block before the HTML is written. Exits 1 on any
 error; warnings print and exit 0.
 
-  --skill <id>       one of ${Object.keys(SCHEMAS).join(", ")} (otherwise inferred from \`product\`)
+  --skill <id>       one of ${SKILL_IDS.join(", ")} (otherwise inferred from \`product\`)
   --source <file>    REQUIRED. field-provenance manifest: {"<path>": {block, valueField, columns?, labelField?}}
   --json             print the findings as JSON`);
     return args.length ? undefined : process.exit(2);

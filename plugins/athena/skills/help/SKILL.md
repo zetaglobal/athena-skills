@@ -71,7 +71,7 @@ new user message as a new task.
 
   To change accounts in Athena MCP, change accounts in the account selector in a web browser: https://app.zetaglobal.net/home
 
-  Athena MCP plugin version: 0.6.30
+  Athena MCP plugin version: 0.6.31
 
   For example, when the tool returns `example-site-0001`, the first line's value is
   `example-site-0001`. Never hardcode the example site ID or substitute the account name.
@@ -79,7 +79,7 @@ new user message as a new task.
   using", or an equivalent account-context question, use **Account mode** and answer from this
   tool call. Do not search the Knowledge Base.
 - Keep the output production-specific: use `https://app.zetaglobal.net/home`, plugin
-  version `0.6.30`, MCP server `athena`, the production gateway URL, and environment `Production`.
+  version `0.6.31`, MCP server `athena`, the production gateway URL, and environment `Production`.
 - If the tool is unavailable, authentication fails, or the response does not contain a site ID,
   use `unavailable` in the status lines. A successful account lookup proves the MCP
   connection and OAuth authorization are working for this read; a failed lookup does not prove
