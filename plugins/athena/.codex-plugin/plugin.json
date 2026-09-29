@@ -1,7 +1,7 @@
 {
   "name": "athena",
-  "version": "0.6.31",
-  "description": "Predictive answers, real-time activation and measurement in one adaptive command center.",
+  "version": "0.6.32",
+  "description": "Use Athena by Zeta to analyze audience reach, customer profiles, campaign performance, and marketing datasets available to your authorized Zeta Marketing Platform account. The plugin combines guided skills with MCP tools and returns concise, source-backed answers and executive briefings.",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "apps": "./.app.json",
@@ -24,7 +24,7 @@
   "interface": {
     "displayName": "Athena by Zeta",
     "shortDescription": "Marketing intelligence you can act on",
-    "longDescription": "Predictive answers, real-time activation and measurement in one adaptive command center.",
+    "longDescription": "Use Athena by Zeta to analyze audience reach, customer profiles, campaign performance, and marketing datasets available to your authorized Zeta Marketing Platform account. The plugin combines guided skills with MCP tools and returns concise, source-backed answers and executive briefings.",
     "developerName": "Zeta Global",
     "category": "Analytics",
     "capabilities": [
