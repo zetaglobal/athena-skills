@@ -46,13 +46,13 @@
     {
       "id": 8,
       "prompt": "Make that briefing a shareable HTML summary.",
-      "expected_output": "Uses the existing template and already-normalized data without repeating Athena calls. It builds a complete source manifest with exact arguments, returned columns, row counts, statuses, and only actual MCP-returned URLs; validates the data block with the packaged validator; stops on R-KPI-EMPTY; creates one self-contained HTML file; and visibly inspects it before claiming success. It does not automatically create PDF, PowerPoint, or CSV.",
+      "expected_output": "Uses the existing template and already-normalized data without repeating Athena calls. It keeps Go to ZMP available by using a relevant MCP-returned URL or the fixed Insights Studio landing URL when none was returned. It builds a complete source manifest with exact arguments, returned columns, row counts, statuses, and only actual MCP-returned URLs; it does not claim the fixed navigation URL was returned by MCP. It validates the data block with the packaged validator; stops on R-KPI-EMPTY; creates one self-contained HTML file; and visibly inspects it before claiming success. It does not automatically create PDF, PowerPoint, or CSV.",
       "files": []
     },
     {
       "id": 9,
       "prompt": "Open the matching report in ZMP.",
-      "expected_output": "Navigates only when the MCP response actually returned a relevant URL or the user explicitly asks to open a known visible ZMP surface. It distinguishes an MCP-returned URL, a browser-visible report URL, and the generic Insights Studio landing URL, and never implies that Athena created or saved a report.",
+      "expected_output": "Opens a matching MCP-returned report URL or a known visible ZMP report when available. Otherwise, it can open the fixed Insights Studio landing URL while making clear that this is generic navigation rather than the matching report. It distinguishes an MCP-returned URL, a browser-visible report URL, and the fixed landing URL, and never implies that Athena created or saved a report.",
       "files": []
     },
     {

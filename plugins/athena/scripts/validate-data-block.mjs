@@ -28,31 +28,45 @@ import { fileURLToPath } from "node:url";
 /* ==========================================================================
    Verified gateway columns, per block family.
    Sources: each skill's SKILL.md "Reading the response" / "Phase 2" tables, which were
-   corrected against live responses in 4b921fb and bb9e0ad. Used to answer "does the field
-   this chart is fed actually exist?" when no explicit column list is supplied.
+   corrected against live responses in 4b921fb and bb9e0ad, and the Customer Pulse column
+   lists re-read from live responses on 2026-09-25. Used to answer "does the field this
+   chart is fed actually exist?" when no explicit column list is supplied.
    ========================================================================== */
 const BLOCK_FAMILIES = [
   {
+    // Behavioral, transactional, visitation, and financial/household interest blocks.
+    // Visitation adds location_brand and segment_path, and returns every value as a string.
     match: /_interest(_customer_ratio)?(_[a-z_]+)?_\d+$/,
     label: "interest block",
-    columns: ["Title", "ParentGroup", "SubGroup", "customer_count", "scaled_zscore",
-              "network_baseline_difference", "_total"],
-    chartField: "scaled_zscore",
+    columns: ["segment_code", "location_brand", "segment_path", "Title", "ParentGroup", "SubGroup",
+              "customer_count", "customer_ratio", "customer_ratio_percentile", "outlier",
+              "people_count", "outlier_people", "network_baseline_difference", "scaled_zscore", "_total"],
+    chartField: "network_baseline_difference",
     labelField: "Title",
     note: "interest blocks carry no index_value and no Label (4b921fb)",
   },
   {
+    match: /_persona_pulse2?(_customer_ratio)?_\d+$/,
+    label: "persona block",
+    columns: ["p_code", "value", "parent_p_code", "parent_value", "customer_count", "customer_ratio",
+              "customer_ratio_percentile", "outlier", "dynamic_baseline", "people_count",
+              "outlier_people", "network_baseline_difference", "scaled_zscore", "_total"],
+    chartField: "network_baseline_difference",
+    labelField: "value",
+  },
+  {
     match: /_acquisition_(age|gender|income)_\d+$/,
     label: "acquisition demographic block",
-    columns: ["Label", "customer_ratio_value", "customer_count", "network_baseline", "_total"],
+    columns: ["Label", "Value", "index_value", "customer_count", "customer_ratio_value", "people_count",
+              "network_baseline_difference", "network_baseline", "Demographic", "_total"],
     chartField: "customer_ratio_value",
     labelField: "Label",
-    note: "network_baseline is not on the percentage scale (it was 5 while age bands ran 2-22%)",
+    note: "network_baseline is not on the percentage scale (it was 5 while age bands ran 2-22%), and Value is not Customer Overlap",
   },
   {
     match: /_demographics_ethnicity_\d+$/,
     label: "ethnicity block",
-    columns: ["race", "customer_ratio", "customer_count", "index", "_total"],
+    columns: ["race", "customer_ratio", "customer_count", "index", "people_count", "scaled_zscore", "_total"],
     chartField: "customer_ratio",
     labelField: "race",
   },
@@ -73,7 +87,8 @@ const BLOCK_FAMILIES = [
   {
     match: /_(coverage|reachability|preferred_channel)(_[a-z_]+)?_\d+$/,
     label: "coverage/reachability block",
-    columns: ["field_metric", "count", "total", "percentage", "people_count", "coverage_people", "_total"],
+    columns: ["field_metric", "count", "total", "percentage", "people_count", "people_total",
+              "coverage_people", "field", "section", "_total"],
     chartField: "percentage",
     labelField: "field_metric",
     note: "coverage_people is the literal string \"Missing Value\" — never chart it",
@@ -81,8 +96,9 @@ const BLOCK_FAMILIES = [
   {
     match: /_social_media_platform_\d+$/,
     label: "social platform block",
-    columns: ["Label", "index_value", "customer_count", "scaled_zscore", "_total"],
-    chartField: "scaled_zscore",
+    columns: ["Label", "index_value", "customer_count", "customer_ratio_percentile", "people_count",
+              "outlier_people", "network_baseline_difference", "scaled_zscore", "_total"],
+    chartField: "network_baseline_difference",
     labelField: "Label",
   },
   {
@@ -116,7 +132,7 @@ function familyFor(block) {
    ========================================================================== */
 const KEY_HINTS = {
   index_value:
-    "the interest and rate blocks this chart is fed carry no `index_value`; the only magnitude is `scaled_zscore` (0-100). See SKILL.md 'Reading the response' and commit 4b921fb — the template used to centre bars on 1.0 against a 0-100 score.",
+    "the interest and rate blocks this chart is fed carry no `index_value`; chart `network_baseline_difference` (signed % vs the network baseline), or `scaled_zscore` (0-100) as ranked strength when the difference is null. See SKILL.md 'Reading the response' and commit 4b921fb — the template used to centre bars on 1.0 against a 0-100 score.",
   baseline:
     "this chart has no baseline concept — `strengthBars` draws no centreline (4b921fb). Remove the key. The only baselines are top-level `ageBaseline`/`genderBaseline`, and only when the number is on the same scale as the bars.",
   Label:
@@ -129,7 +145,7 @@ const KEY_HINTS = {
   network_baseline:
     "`network_baseline` is a baseline for the block's own Value column, not for the distribution (it was 5 while age bands ran 2-22%). Do not pass it; omit `ageBaseline`/`genderBaseline` unless you have a same-scale number.",
   network_baseline_difference:
-    "`network_baseline_difference` was null on every observed interest and demographic row — do not depend on it.",
+    "`network_baseline_difference` is returned by interest, persona, social-platform, and age/gender/income blocks; coverage, reachability, preferred-channel, and ethnicity blocks do not carry it.",
   scaled_zscore: "pass the score as the numeric entry in `values[]`, not as its own key.",
   coverage_people: "`coverage_people` is the literal string \"Missing Value\" — ignore it.",
 };
@@ -182,8 +198,10 @@ function checkValue(v, spec, path, ctx) {
     if (spec.enum && !spec.enum.includes(v)) {
       ctx.err("R-TYPE", path, `must be one of ${spec.enum.map((e) => `'${e}'`).join(", ")}, got '${v}'. ${spec.doc || ""}`.trim());
     }
-    if (spec.url && !/^https?:\/\//.test(v)) {
-      ctx.err("R-TYPE", path, `must be an absolute http(s) URL — the template removes the 'Go to ZMP' button otherwise. Use the tool response's redirect_url.`);
+    if (spec.url && !(spec.allowEmptyUrl && v === "") && !/^https?:\/\//.test(v)) {
+      ctx.err("R-TYPE", path, spec.allowEmptyUrl
+        ? "must be an absolute http(s) URL, or an empty string when no URL was returned. Never guess a dashboard URL."
+        : "must be an absolute http(s) URL — the template removes the 'Go to ZMP' button otherwise. Use the tool response's redirect_url.");
     }
     return;
   }
@@ -272,7 +290,7 @@ function describe(v) {
 const KPI_TEXT = {
   type: "array",
   required: true,
-  doc: "up to three headline cards; Customer Pulse may omit audience size when people_total is unavailable",
+  doc: "up to three headline cards from distinct returned signals; no audience headcount",
   of: {
     type: "object",
     shape: {
@@ -323,6 +341,8 @@ const SCHEMAS = {
       headline: { type: "string", required: true, nonEmpty: true },
       kpis: KPI_TEXT,
       sourceLimit: { type: "string", nonEmpty: true, doc: "plain-language limitation when a section could not be built" },
+      // Coverage tabs: addressable reach, recent channel engagement, social indexing.
+      reachability: LABELLED_VALUES,
       // Activity by Channel: share-of-activity percentages by channel (preferred_channel).
       activityChannel: LABELLED_VALUES,
       // Activity by Social Channel: signed % index vs the network baseline (social_media_platform).
@@ -336,15 +356,30 @@ const SCHEMAS = {
           type: "object",
           shape: {
             name: { type: "string", required: true, nonEmpty: true },
+            tab: { type: "string", nonEmpty: true, doc: "group charts under one audience-characteristics tab; use Demographics for Age, Gender, Income, Ethnicity" },
             caption: { type: "string", required: true },
             default: { type: "boolean", doc: "true for the always-on characteristics; false/omitted for user-selected add-ons" },
-            scale: { type: "string", required: true, enum: ["baseline-delta", "ranked-strength"], doc: "baseline-delta is signed % vs network baseline; ranked-strength is a non-negative 0-100 score rendered without labels" },
+            scale: { type: "string", required: true, enum: ["customer-overlap", "baseline-delta", "ranked-strength"], doc: "customer-overlap is the audience share for demographics; baseline-delta is signed % vs network baseline; ranked-strength is a non-negative 0-100 score" },
+            selection: {
+              type: "object", doc: "only for selections observed in the dashboard, supplied by the user, or taken from the dashboard's vertical preset; MCP does not return default UI selections",
+              shape: {
+                source: { type: "string", required: true, enum: ["browser-observed", "user-specified", "dashboard-preset"] },
+                preset: { type: "string", nonEmpty: true, doc: "the dashboard vertical preset applied, e.g. Telecom; required when source is dashboard-preset" },
+                categories: { type: "array", required: true, of: { type: "string", nonEmpty: true } },
+                subcategories: { type: "array", required: true, of: { type: "string", nonEmpty: true } },
+                removeOutliers: { type: "boolean", required: true },
+                sortBy: { type: "string", required: true, enum: ["Indexing", "Customer Overlap"] },
+              },
+            },
             rows: {
               type: "array", required: true,
               of: {
                 type: "object",
                 shape: {
                   label: { type: "string", required: true, nonEmpty: true },
+                  group: { type: "string", nonEmpty: true },
+                  subgroup: { type: "string", nonEmpty: true },
+                  outlier: { type: "boolean" },
                   values: { type: "array", required: true, of: { type: "numberOrNull" }, doc: "signed baseline deltas or non-negative ranked-strength scores, according to the parent scale" },
                 },
               },
@@ -508,6 +543,11 @@ const REQUIRED_PROVENANCE = {
     // value must be the signed % difference from the network baseline, not a raw index/count.
     { probe: (d) => (Array.isArray(d.characteristics) ? d.characteristics.map((_, i) => `characteristics[${i}].rows[].values`) : []),
       why: "characteristic over-index values must come from the block's baseline-difference column, not a raw index or count" },
+    // The three Coverage tabs share one chart shape, so a Preferred Channel block rendered as
+    // Channel Reachability looks exactly as confident as the real thing. That swap shipped.
+    { probe: (d) => ["reachability", "activityChannel", "activitySocial"]
+        .filter((k) => Array.isArray(d[k]) && d[k].length).map((k) => `${k}[].values`),
+      why: "each Coverage tab must name the block that fed it: Reachability for reach, Preferred Channel for activity, Social Platform for social indexing" },
   ],
   "insights-studio": [
     { probe: (d) => (d.series && Array.isArray(d.series.points) && d.series.points.length ? ["series.points[].v"] : []),
@@ -625,13 +665,46 @@ function percentScaleChecks(name, rows, path, ctx) {
 /* ==========================================================================
    Per-skill semantic rules
    ========================================================================== */
-function pulseSemantic(d, ctx) {
+// Each Coverage tab has its own block. Reachability and Preferred Channel share every column,
+// so only the block name tells them apart, and swapping them renders a confident wrong chart.
+const PULSE_COVERAGE_SOURCES = {
+  reachability: {
+    block: /_reachability_\d+$/, field: "percentage",
+    why: "Channel Reachability is addressable reach; Preferred Channel rates are recent engagement and never reach",
+  },
+  activityChannel: {
+    block: /_preferred_channel_\d+$/, field: "percentage",
+    why: "Activity by Channel is the Preferred Channel block; Reachability rates are addressable reach, not activity",
+  },
+  activitySocial: {
+    block: /_social_media_platform_\d+$/, field: "network_baseline_difference",
+    why: "Activity by Social Channel draws a signed difference from the network baseline; a 0-100 scaled_zscore or index_value drawn on that axis misstates every bar",
+  },
+};
+
+// Section names the dashboard retired. The briefing must use the dashboard's current terms.
+const PULSE_RETIRED_SECTIONS = {
+  "content consumption": "Online Content Consumption",
+  "transactional interests": "Transactions",
+  "visitation interests": "Visitation",
+  "financial signals": "Financial & Household",
+  "household and property": "Financial & Household",
+  "household/property": "Financial & Household",
+  "financial and household": "Financial & Household",
+};
+
+function pulseSemantic(d, ctx, source) {
   const segs = Array.isArray(d.segments) ? d.segments : [];
   const segCount = segs.length;
   if (!segCount) {
     ctx.err("R-REQUIRED", "segments", "at least one segment is required — `segments` is what binds each entry of every values[] to an audience, and the title, legend and colours all come from it.");
   }
 
+  if (Array.isArray(d.reachability) && d.reachability.length) {
+    alignment(d.reachability, "reachability", segCount, ctx);
+    percentScaleChecks("reachability", d.reachability, "reachability", ctx);
+    dedupeLabels(d.reachability, "reachability", ctx);
+  }
   // Activity by Channel is a set of share-of-activity percentages (0-100).
   const chan = d.activityChannel;
   if (Array.isArray(chan) && chan.length) {
@@ -644,6 +717,15 @@ function pulseSemantic(d, ctx) {
     alignment(d.activitySocial, "activitySocial", segCount, ctx);
     dedupeLabels(d.activitySocial, "activitySocial", ctx);
   }
+  // A missing manifest entry is reported by requiredProvenance; here, check what it names.
+  for (const [key, want] of Object.entries(PULSE_COVERAGE_SOURCES)) {
+    const entry = source && source[`${key}[].values`];
+    if (!entry || !Array.isArray(d[key]) || !d[key].length) continue;
+    if (!want.block.test(String(entry.block)) || entry.valueField !== want.field) {
+      ctx.err("R-FIELD", `${key}[].values`,
+        `${key} is fed by ${entry.block}.${entry.valueField}, but it must come from a block matching ${want.block} with valueField '${want.field}'. ${want.why}.`);
+    }
+  }
 
   // Characteristics: signed baseline deltas or non-negative ranked strengths.
   (Array.isArray(d.characteristics) ? d.characteristics : []).forEach((dim, i) => {
@@ -652,11 +734,58 @@ function pulseSemantic(d, ctx) {
     dedupeLabels(rows, `${p}.rows`, ctx);
     alignment(rows, `${p}.rows`, segCount, ctx);
     const vals = finiteValues(rows, (r) => r.values);
+    const section = String(dim && (dim.tab || dim.name) || "").trim();
+    const currentTerm = PULSE_RETIRED_SECTIONS[section.toLowerCase()];
+    if (currentTerm) {
+      ctx.err("R-TERM", p, `"${section}" is a retired section name; the dashboard calls this section "${currentTerm}". Set tab: "${currentTerm}" (a chart name inside that tab may stay descriptive).`);
+    }
+    const isDemographic = /^(age|gender|income|ethnicity(?: breakdown)?)$/i.test(String(dim && dim.name || ""));
+    if (isDemographic && (dim.tab !== "Demographics" || dim.scale !== "customer-overlap")) {
+      ctx.err("R-SCALE", p, "Age, Gender, Income, and Ethnicity belong in the Demographics tab and must use customer-overlap percentages.");
+    }
+    if (dim && dim.scale === "customer-overlap") {
+      percentScaleChecks("customer overlap", rows, `${p}.rows`, ctx);
+    }
     if (dim && dim.scale === "ranked-strength" && vals.some((v) => v < 0)) {
       ctx.err("R-SCALE", `${p}.rows`, "ranked-strength values cannot be negative; negative values are signed baseline deltas and require scale: 'baseline-delta'.");
     }
-    if (dim && dim.scale === "baseline-delta" && new Set(vals).size >= 2 && vals.every((v) => v >= 0 && v <= 100)) {
+    const sourceField = source && source[`${p}.rows[].values`] && source[`${p}.rows[].values`].valueField;
+    if (dim && dim.scale === "baseline-delta" && sourceField !== "network_baseline_difference" &&
+        new Set(vals).size >= 2 && vals.every((v) => v >= 0 && v <= 100)) {
       ctx.err("R-SCALE", `${p}.rows`, "baseline-delta values look like non-negative 0-100 scores. Use scale: 'ranked-strength' unless the source explicitly proves these are signed deltas.");
+    }
+    if (dim && dim.scale === "customer-overlap" && sourceField && !["customer_ratio_value", "customer_ratio"].includes(sourceField)) {
+      ctx.err("R-FIELD", `${p}.rows`, "customer-overlap charts must source customer_ratio_value or customer_ratio, never index_value or network_baseline_difference.");
+    }
+    if (dim && dim.selection) {
+      if (dim.selection.source === "dashboard-preset" && !dim.selection.preset) {
+        ctx.err("R-FILTER", `${p}.selection`, "a dashboard-preset selection must name the vertical preset it applied (preset), so the chart note can say which default it reproduces.");
+      }
+      const cats = new Set(dim.selection.categories || []), subs = new Set(dim.selection.subcategories || []);
+      rows.forEach((row, j) => {
+        if (!row.group || !row.subgroup || typeof row.outlier !== "boolean") {
+          ctx.err("R-FILTER", `${p}.rows[${j}]`, "filtered chart rows must retain group, subgroup, and outlier fields so selected filters can be verified.");
+          return;
+        }
+        if ((cats.size && !cats.has(row.group)) || (subs.size && !subs.has(row.subgroup)) ||
+            (dim.selection.removeOutliers && row.outlier)) {
+          ctx.err("R-FILTER", `${p}.rows[${j}]`, "row falls outside the declared category, subcategory, or outlier selection.");
+        }
+      });
+      // The chart prints "Sorted by Indexing", so the rows must be in that order. With one
+      // segment the charted value is the index difference; with several there is no single
+      // order to check.
+      if (dim.selection.sortBy === "Indexing" && segCount === 1) {
+        let prev = null;
+        rows.forEach((row, j) => {
+          const v = Array.isArray(row && row.values) ? row.values[0] : null;
+          if (typeof v !== "number" || !Number.isFinite(v)) return;
+          if (prev !== null && v > prev) {
+            ctx.err("R-FILTER", `${p}.rows[${j}]`, `the chart note says "Sorted by Indexing", but this row (${v}) is larger than the row before it (${prev}). Sort the rows by value, largest first.`);
+          }
+          prev = v;
+        });
+      }
     }
     if (rows.length && !vals.length) {
       ctx.err("R-DOMAIN", `${p}.rows`, `every value is null, so the chart draws nothing but labels. Drop the characteristic instead of shipping an empty chart.`);
@@ -667,11 +796,11 @@ function pulseSemantic(d, ctx) {
   if (Array.isArray(d.kpis) && d.kpis.length > 3) {
     ctx.warn("R-KPI-COUNT", "kpis", `${d.kpis.length} KPI cards; Customer Pulse supports at most three anomaly cards.`);
   }
-  // No absolute headcounts anywhere: an anomaly KPI must be a relative/index expression.
+  // No absolute headcounts anywhere: headlines use a rate or relative difference.
   (Array.isArray(d.kpis) ? d.kpis : []).forEach((k, i) => {
     const v = String(k && k.value || "");
     if (/\d{3,}/.test(v.replace(/%/g, "")) && !/%|x|×|index/i.test(v)) {
-      ctx.err("R-DOMAIN", `kpis[${i}].value`, `"${v}" looks like an absolute count. Overview cards are top anomalies expressed as a relative over/under-index (e.g. "+240%"), never a headcount.`);
+      ctx.err("R-DOMAIN", `kpis[${i}].value`, `"${v}" looks like an absolute count. Overview cards use rates or relative differences, never a headcount.`);
     }
   });
   const banned = /\b\d[\d,]{3,}\b\s*(records|people|profiles|customers)\b|records addressable/i;
@@ -844,7 +973,7 @@ export function validateDataBlock(data, opts = {}) {
   const schema = SCHEMAS[skillId];
   crossCutting(data, ctx);
   checkShape(data, schema.shape, "", ctx);
-  schema.semantic(data, ctx);
+  schema.semantic(data, ctx, opts.source);
   fieldProvenance(opts.source, ctx);
   // An empty or partial manifest must not satisfy a required check — otherwise
   // `--source empty.json` reopens exactly the hole that making it required closed.
@@ -1858,6 +1987,49 @@ function goodPulse() {
   };
 }
 
+// One segment, so the charted value is the only order a "Sorted by Indexing" note can mean.
+function onePulse() {
+  const d = goodPulse();
+  d.segments = [d.segments[0]];
+  for (const k of ["reachability", "activityChannel", "activitySocial"]) (d[k] || []).forEach((r) => { r.values = r.values.slice(0, 1); });
+  d.characteristics.forEach((c) => c.rows.forEach((r) => { r.values = r.values.slice(0, 1); }));
+  return d;
+}
+
+function selectedPulse() {
+  const d = onePulse();
+  d.characteristics[0] = {
+    name: "Visitation", caption: "Physical brand locations visited by the audience segment.", default: false, scale: "baseline-delta",
+    selection: { source: "browser-observed", categories: ["Consumer Services"], subcategories: ["Wireless Carriers"], removeOutliers: true, sortBy: "Indexing" },
+    rows: [
+      { label: "Carrier A", group: "Consumer Services", subgroup: "Wireless Carriers", outlier: false, values: [16] },
+      { label: "Carrier B", group: "Consumer Services", subgroup: "Wireless Carriers", outlier: false, values: [14] },
+      { label: "Carrier C", group: "Consumer Services", subgroup: "Wireless Carriers", outlier: false, values: [-8] },
+    ],
+  };
+  return d;
+}
+
+function reachPulse() {
+  const d = goodPulse();
+  d.reachability = [
+    { label: "Programmatic Universe", values: [64, 61] },
+    { label: "Permissioned Email", values: [42, 45] },
+    { label: "Direct Mail", values: [83, 80] },
+  ];
+  return d;
+}
+
+// Correct Coverage provenance for whichever Coverage tabs a pulse fixture carries.
+function pulseCoverageSource(data) {
+  const m = {};
+  const has = (k) => Array.isArray(data[k]) && data[k].length;
+  if (has("reachability")) m["reachability[].values"] = { block: "customer_pulse_reachability_0", valueField: "percentage", labelField: "field_metric" };
+  if (has("activityChannel")) m["activityChannel[].values"] = { block: "customer_pulse_preferred_channel_0", valueField: "percentage", labelField: "field_metric" };
+  if (has("activitySocial")) m["activitySocial[].values"] = { block: "customer_pulse_social_media_platform_0", valueField: "network_baseline_difference", labelField: "Label" };
+  return m;
+}
+
 function goodStudio() {
   return {
     title: "Customer Marketing performance",
@@ -1923,19 +2095,19 @@ const CASES = [
   {
     name: "good field manifest (network_baseline_difference on a characteristic block)",
     rule: null, verdict: "pass", data: goodPulse,
-    source: { "characteristics[0].rows[].values": { block: "customer_pulse_acquisition_transactional_interest_0", valueField: "network_baseline_difference", labelField: "Title" } },
+    source: { ...pulseCoverageSource(goodPulse()), "characteristics[0].rows[].values": { block: "customer_pulse_acquisition_transactional_interest_0", valueField: "network_baseline_difference", labelField: "Title" } },
   },
 
   // ---- R-FIELD: a declared field that does not exist in the source
   {
     name: "R-FIELD: index_value on a block that does not return it",
     rule: "R-FIELD", verdict: "error", data: goodPulse,
-    source: { "characteristics[0].rows[].values": { block: "customer_pulse_acquisition_transactional_interest_0", valueField: "index_value" } },
+    source: { ...pulseCoverageSource(goodPulse()), "characteristics[0].rows[].values": { block: "customer_pulse_acquisition_transactional_interest_0", valueField: "index_value" } },
   },
   {
     name: "R-FIELD: Label on an interest block whose label column is Title",
     rule: "R-FIELD", verdict: "error", data: goodPulse,
-    source: { "characteristics[0].rows[].label": { block: "customer_pulse_acquisition_behavioral_interest_0", valueField: "network_baseline_difference", labelField: "Label" } },
+    source: { ...pulseCoverageSource(goodPulse()), "characteristics[0].rows[].label": { block: "customer_pulse_acquisition_behavioral_interest_0", valueField: "network_baseline_difference", labelField: "Label" } },
   },
 
   // ---- R-UNKNOWN: strictness
@@ -1969,7 +2141,74 @@ const CASES = [
   {
     name: "R-SCALE: baseline delta must not masquerade as ranked scores",
     rule: "R-SCALE", verdict: "error",
+    source: { ...pulseCoverageSource(goodPulse()), "characteristics[0].rows[].values": { block: "customer_pulse_acquisition_transactional_interest_0", valueField: "scaled_zscore" } },
     data: () => { const d = goodPulse(); d.characteristics[0].rows = [{ label: "A", values: [94, 79] }, { label: "B", values: [76, 71] }]; return d; },
+  },
+  {
+    name: "demographic customer overlap uses the ratio column",
+    rule: null, verdict: "pass",
+    source: { ...pulseCoverageSource(goodPulse()), "characteristics[0].rows[].values": { block: "customer_pulse_acquisition_age_0", valueField: "customer_ratio_value", labelField: "Label" } },
+    data: () => { const d = goodPulse(); d.characteristics = [{ name: "Age", tab: "Demographics", caption: "Age breakdowns by audience segment", scale: "customer-overlap", rows: [{ label: "18-25", values: [20, 25] }, { label: "25-35", values: [40, 35] }] }]; return d; },
+  },
+  {
+    name: "R-FIELD: demographic index cannot masquerade as overlap",
+    rule: "R-FIELD", verdict: "error",
+    source: { ...pulseCoverageSource(goodPulse()), "characteristics[0].rows[].values": { block: "customer_pulse_acquisition_age_0", valueField: "index_value", labelField: "Label" } },
+    data: () => { const d = goodPulse(); d.characteristics = [{ name: "Age", tab: "Demographics", caption: "Age breakdowns by audience segment", scale: "customer-overlap", rows: [{ label: "18-25", values: [20, 25] }] }]; return d; },
+  },
+  {
+    name: "R-FILTER: observed selection excludes unselected groups",
+    rule: "R-FILTER", verdict: "error",
+    data: () => { const d = goodPulse(); d.characteristics[0].selection = { source: "browser-observed", categories: ["Entertainment"], subcategories: ["Music"], removeOutliers: true, sortBy: "Indexing" }; d.characteristics[0].rows.forEach(r => { r.group = "Home"; r.subgroup = "Music"; r.outlier = false; }); return d; },
+  },
+  { name: "good browser-observed selection in Indexing order", rule: null, verdict: "pass", data: selectedPulse },
+  {
+    name: "good dashboard-preset selection",
+    rule: null, verdict: "pass",
+    data: () => { const d = selectedPulse(); Object.assign(d.characteristics[0].selection, { source: "dashboard-preset", preset: "Telecom" }); return d; },
+  },
+  {
+    name: "R-FILTER: a dashboard-preset selection names its preset",
+    rule: "R-FILTER", verdict: "error",
+    data: () => { const d = selectedPulse(); d.characteristics[0].selection.source = "dashboard-preset"; return d; },
+  },
+  {
+    name: "R-FILTER: rows must follow the declared Indexing order",
+    rule: "R-FILTER", verdict: "error",
+    data: () => { const d = selectedPulse(); d.characteristics[0].rows.reverse(); return d; },
+  },
+  {
+    name: "R-TERM: a retired section name is rejected",
+    rule: "R-TERM", verdict: "error",
+    data: () => { const d = goodPulse(); d.characteristics[0].name = "Transactional interests"; return d; },
+  },
+  {
+    name: "two charts may share the Financial & Household tab",
+    rule: null, verdict: "pass",
+    data: () => {
+      const d = goodPulse();
+      d.characteristics = [
+        { name: "Financial signals", tab: "Financial & Household", caption: "Financial and Household characteristics by the audience segment.", scale: "baseline-delta", rows: [{ label: "A", values: [12, -4] }, { label: "B", values: [-6, 3] }] },
+        { name: "Household and property", tab: "Financial & Household", caption: "Financial and Household characteristics by the audience segment.", scale: "baseline-delta", rows: [{ label: "C", values: [30, 8] }, { label: "D", values: [-14, -2] }] },
+      ];
+      return d;
+    },
+  },
+  { name: "good Coverage manifest with Channel Reachability", rule: null, verdict: "pass", data: reachPulse },
+  {
+    name: "R-FIELD: a Preferred Channel block cannot feed Channel Reachability",
+    rule: "R-FIELD", verdict: "error", data: reachPulse,
+    source: { ...defaultSource(reachPulse()), "reachability[].values": { block: "customer_pulse_preferred_channel_0", valueField: "percentage", labelField: "field_metric" } },
+  },
+  {
+    name: "R-FIELD: Channel Reachability needs its own provenance entry",
+    rule: "R-FIELD", verdict: "error", data: reachPulse,
+    source: defaultSource(goodPulse()),
+  },
+  {
+    name: "R-FIELD: social activity must chart the signed baseline difference",
+    rule: "R-FIELD", verdict: "error", data: goodPulse,
+    source: { ...defaultSource(goodPulse()), "activitySocial[].values": { block: "customer_pulse_social_media_platform_0", valueField: "scaled_zscore", labelField: "Label" } },
   },
   {
     name: "R-LENGTH: breakdown row missing a declared column",
@@ -2072,6 +2311,21 @@ const CASES = [
 
   // ---- ordering, types, required keys
   {
+    name: "Insights Studio: fixed landing URL when no report URL is returned",
+    verdict: "pass",
+    data: () => { const d = goodStudio(); d.zmpUrl = "https://app.zetaglobal.net/reports/insights-studio"; return d; },
+  },
+  {
+    name: "R-TYPE: Insights Studio rejects an empty navigation URL",
+    rule: "R-TYPE", verdict: "error",
+    data: () => { const d = goodStudio(); d.zmpUrl = ""; return d; },
+  },
+  {
+    name: "R-TYPE: Insights Studio still rejects a relative dashboard URL",
+    rule: "R-TYPE", verdict: "error",
+    data: () => { const d = goodStudio(); d.zmpUrl = "/reports/insights-studio"; return d; },
+  },
+  {
     name: "R-TYPE: a number arrived as a quoted string",
     rule: "R-TYPE", verdict: "error",
     data: () => { const d = goodPulse(); d.activityChannel[0].values[0] = "24"; return d; },
@@ -2112,7 +2366,7 @@ const CASES = [
   {
     name: "R-FIELD: a manifest covering only some characteristics is an error",
     rule: "R-FIELD", verdict: "error",
-    source: { "characteristics[0].rows[].values": { block: "customer_pulse_acquisition_transactional_interest_0", valueField: "network_baseline_difference" } },
+    source: { ...pulseCoverageSource(goodPulse()), "characteristics[0].rows[].values": { block: "customer_pulse_acquisition_transactional_interest_0", valueField: "network_baseline_difference" } },
     data: () => {
       const d = goodPulse();
       d.characteristics.push({ name: "Visitation", caption: "c", default: false, rows: [{ label: "Grocery", values: [93, 91] }] });
@@ -2127,7 +2381,7 @@ const CASES = [
    `noSource` to assert the requirement — are left alone. */
 function defaultSource(data) {
   if (Array.isArray(data.characteristics)) {
-    const m = {};
+    const m = pulseCoverageSource(data);
     data.characteristics.forEach((_, i) => {
       m[`characteristics[${i}].rows[].values`] = {
         block: "customer_pulse_acquisition_transactional_interest_0",

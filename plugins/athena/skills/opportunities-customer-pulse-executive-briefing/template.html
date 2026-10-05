@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Customer Pulse — Executive Summary — Athena by Zeta</title>
 <style>
 
@@ -96,7 +101,6 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-siz
 .zmp:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:2px}
 /* Right-hand controls sit together so the primary ZMP link keeps the left edge. */
 .tb-actions{display:inline-flex;align-items:center;gap:8px}
-     border:1px solid hsl(var(--border));background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
 .eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
          color:hsl(var(--muted-foreground));margin:0}
 h1{font-size:clamp(28px,3.4vw,42px);font-weight:700;letter-spacing:-.025em;line-height:1.1;margin:0;text-wrap:balance}
@@ -211,6 +215,13 @@ footer{border-top:1px solid hsl(var(--border));padding-top:16px;font-size:13px;c
 .tabs{display:flex;flex-wrap:wrap;gap:6px}
 .tabs button{font-size:13px}
 .tabs + .scroller{margin-top:16px}
+.tab-panels{display:flex;flex-direction:column;gap:22px;margin-top:16px}
+.chart-panel{min-width:0}
+.chart-panel h3{margin-bottom:8px}
+.chart-panel .caption{text-align:left}
+.chart-panel .legend-row{justify-content:flex-start}
+#char-panels .scroller{max-height:640px;overflow:auto}
+.filter-note{font-size:12px;color:hsl(var(--muted-foreground));margin-top:10px}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .donuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;justify-items:center}
 .donut{display:flex;flex-direction:column;align-items:center;gap:6px}
@@ -220,6 +231,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{text-align:left;padding:9px 10px;border-bottom:1px solid hsl(var(--border));font-variant-numeric:tabular-nums}
 th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--muted-foreground))}
 </style>
+</head>
+<body>
 
 <script id="pulse-data" type="application/json">{
   "brand": "{{BRAND}}",
@@ -237,6 +250,9 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
     { "value": "{{KPI_2_VALUE}}", "label": "{{KPI_2_LABEL}}", "note": "{{KPI_2_NOTE}}" },
     { "value": "{{KPI_3_VALUE}}", "label": "{{KPI_3_LABEL}}", "note": "{{KPI_3_NOTE}}" }
   ],
+  "reachability": [
+    { "label": "{{REACH_CHANNEL}}", "values": [0] }
+  ],
   "activityChannel": [
     { "label": "{{CHANNEL}}", "values": [0] }
   ],
@@ -244,7 +260,7 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
     { "label": "{{PLATFORM}}", "values": [0] }
   ],
   "characteristics": [
-    { "name": "{{CHARACTERISTIC_NAME}}", "caption": "{{CHARACTERISTIC_CAPTION}}", "default": true,
+    { "name": "{{CHARACTERISTIC_NAME}}", "tab": "{{CHARACTERISTIC_TAB}}", "caption": "{{CHARACTERISTIC_CAPTION}}", "default": true, "scale": "customer-overlap",
       "rows": [ { "label": "{{ITEM_LABEL}}", "values": [0] } ] }
   ],
   "actions": [
@@ -285,25 +301,15 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
   </div>
 
   <section>
-    <h2>Overview</h2>
+    <h2>Highlights</h2>
     <div class="card"><div class="kpis" id="kpis"></div><p class="caption" id="source-limit" hidden></p></div>
   </section>
 
-  <section id="sec-activity">
-    <h2>Activity by Channel</h2>
+  <section id="sec-coverage">
+    <h2>Coverage</h2>
     <div class="card">
-      <div class="scroller"><svg id="chart-activity"></svg></div>
-      <div class="legend-row" id="legend-activity"></div>
-      <p class="caption">Share of this audience's communication activity by channel, last 90 days.</p>
-    </div>
-  </section>
-
-  <section id="sec-social">
-    <h2>Activity by Social Channel</h2>
-    <div class="card">
-      <div class="scroller"><svg id="chart-social"></svg></div>
-      <div class="legend-row" id="legend-social"></div>
-      <p class="caption">Index of activity on each social platform against the Network Baseline (dashed line). To the right of the line over-indexes; to the left under-indexes.</p>
+      <div class="tabs" id="coverage-tabs" role="tablist"></div>
+      <div class="tab-panels" id="coverage-panels"></div>
     </div>
   </section>
 
@@ -311,9 +317,7 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
     <h2>Audience characteristics</h2>
     <div class="card">
       <div class="tabs" id="char-tabs" role="tablist"></div>
-      <div class="scroller"><svg id="chart-char"></svg></div>
-      <div class="legend-row" id="legend-char"></div>
-      <p class="caption">Percentages shown inside the bars represent relative differences from the Network Baseline.</p>
+      <div class="tab-panels" id="char-panels"></div>
     </div>
   </section>
 
@@ -343,7 +347,9 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
   var NS = 'http://www.w3.org/2000/svg';
   var esc = function(s){ var e = document.createElement('div'); e.textContent = s == null ? '' : s; return e.innerHTML; };
   var fmt = function(n){ return Number(n).toLocaleString('en-US'); };
-  var pct = function(n){ return (Math.round(Number(n) * 10) / 10) + '%'; };
+  var pct = function(n){ return Math.round(Number(n)) + '%'; };
+  var pctText = function(s){ return String(s == null ? '' : s).replace(/([+-]?\d+(?:\.\d+)?)\s*%/g,
+    function(_, n){ return (n.charAt(0) === '+' ? '+' : '') + pct(n); }); };
   var css = function(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); };
   var hsl = function(n){ return 'hsl(' + css(n) + ')'; };
   function el(tag, attrs, text){
@@ -353,6 +359,23 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
     return n;
   }
   function fit(s, max){ return s.length <= max ? s : s.slice(0, max - 1).replace(/[\s,\-]+$/, '') + '…'; }
+  // Up to two lines, broken at spaces. Category axes name channels the way ZMP does
+  // ("Programmatic Universe"), and a one-line cut left several bars unnamed.
+  function wrapLabel(svg, label, maxChars, attrs){
+    var lines = [];
+    String(label).split(/\s+/).forEach(function(word){
+      var last = lines.length - 1;
+      if (last >= 0 && (lines[last] + ' ' + word).length <= maxChars) lines[last] += ' ' + word;
+      else lines.push(word);
+    });
+    if (lines.length > 2) lines = [lines[0], lines.slice(1).join(' ')];
+    var text = el('text', attrs);
+    lines.forEach(function(line, i){
+      text.appendChild(el('tspan', { x: attrs.x, dy: i ? '1.25em' : 0 }, fit(line, maxChars)));
+    });
+    text.appendChild(el('title', {}, label));
+    svg.appendChild(text);
+  }
   function empty(node, msg){ node.innerHTML = '<p class="empty">' + esc(msg) + '</p>'; }
   function hide(id){ var s = $(id); if (s) s.remove(); }
 
@@ -409,7 +432,7 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
   $('brief-stamp').textContent = D.asOf;
 
   $('kpis').innerHTML = (D.kpis || []).map(function(k){
-    return '<div class="kpi"><span class="n">' + esc(k.value) + '</span>' +
+    return '<div class="kpi"><span class="n">' + esc(pctText(k.value)) + '</span>' +
            '<span class="l">' + esc(k.label) + '</span>' +
            '<span class="note">' + esc(k.note) + '</span></div>';
   }).join('');
@@ -532,7 +555,7 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
     svg.setAttribute('aria-label', opts.aria || 'Grouped bar chart');
 
     var muted = hsl('--muted-foreground'), border = hsl('--border');
-    var vals = rows.reduce(function(acc, r){ return acc.concat(r.values.map(Number)); }, []);
+    var vals = rows.reduce(function(acc, r){ return acc.concat(r.values.filter(function(v){ return v != null; }).map(Number)); }, []);
     var max = Math.max.apply(null, vals.concat([0])) || 1;
     var y = function(v){ return T + PH - (v / max) * PH; };
 
@@ -548,6 +571,7 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
       var cx = L + gi * gW + gW / 2;
       var total = series * barW + (series - 1) * 4;
       row.values.forEach(function(v, si){
+        if (v == null || !isFinite(Number(v))) return;
         var x = cx - total / 2 + si * (barW + 4);
         var top = y(Number(v) || 0);
         svg.appendChild(el('rect', { x: x, y: top, width: barW, height: Math.max(1, T + PH - top),
@@ -556,10 +580,8 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
           'font-size': 11, 'font-weight': 600, fill: muted,
           style: 'font-variant-numeric:tabular-nums' }, opts.format ? opts.format(v) : pct(v)));
       });
-      var lbl = el('text', { x: cx, y: T + PH + 20, 'text-anchor': 'middle',
-        'font-size': 11, fill: muted }, fit(row.label, 14));
-      lbl.appendChild(el('title', {}, row.label));
-      svg.appendChild(lbl);
+      wrapLabel(svg, row.label, Math.max(8, Math.floor((gW - 6) / 6.2)),
+        { x: cx, y: T + PH + 20, 'text-anchor': 'middle', 'font-size': 11, fill: muted });
     });
   }
 
@@ -572,6 +594,7 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
   function strengthBars(svg, rows, opts){
     opts = opts || {};
     if (!rows || !rows.length){ empty(svg.parentNode, opts.emptyMessage || 'No data for this view.'); return; }
+    rows = rows.slice(0, 50);
     var LABEL_W = 230, AREA_W = 520, ROW_H = 30 + (SEGMENTS.length > 1 ? (SEGMENTS.length - 1) * 12 : 0);
     var BAR_H = SEGMENTS.length > 1 ? 10 : 16, TOP = 26, BOTTOM = 30, PAD = 16;
     var w = LABEL_W + AREA_W + PAD, h = TOP + rows.length * ROW_H + BOTTOM;
@@ -616,41 +639,134 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
       'Ranked by how far above the network baseline. Bar length is relative, not a ratio.'));
   }
 
-  /* ---- Audience-characteristic tabs (over-index vs Network Baseline). */
+  /* ---- Coverage and characteristic tabs use the same keyboard-accessible control.
+     Each characteristic tab can contain several charts, as Demographics does. */
+  var coverageViews = [
+    { name: 'Channel Reachability', rows: D.reachability, kind: 'reach',
+      caption: 'Addressable audience reach across Zeta’s marketing channels' },
+    { name: 'Activity by Channel', rows: D.activityChannel, kind: 'channel',
+      caption: 'Share of the reachable audience that has shown recent engagement in each marketing channel' },
+    { name: 'Activity by Social Channel', rows: D.activitySocial, kind: 'social',
+      caption: 'Top indexing social media channels for socially active members of the audience segment(s) in the last 90 days.' }
+  ].filter(function(v){ return Array.isArray(v.rows) && v.rows.length; });
   var dims = D.characteristics || [];
-  var activeDim = 0;
-  function renderTabs(){
-    if (!dims.length){ hide('sec-char'); return; }
-    // A single characteristic is not a choice — render it as a heading, not a lone tab.
-    $('char-tabs').hidden = dims.length < 2;
-    $('char-tabs').innerHTML = dims.map(function(d, i){
-      return '<button type="button" role="tab" aria-selected="' + (i === activeDim) + '"' +
-             ' tabindex="' + (i === activeDim ? '0' : '-1') + '" data-i="' + i + '">' +
-             esc(d.name) + '</button>';
+  var charViews = [];
+  dims.forEach(function(dim){
+    var name = dim.tab || dim.name;
+    var view = charViews.find(function(v){ return v.name === name; });
+    if (!view){ view = { name: name, charts: [] }; charViews.push(view); }
+    view.charts.push(dim);
+  });
+  var charOrder = ['Demographics', 'Psychographics', 'Online Content Consumption',
+                   'Transactions', 'Visitation', 'Financial & Household', 'CTV', 'Linear TV'];
+  charViews.sort(function(a,b){
+    var ai = charOrder.indexOf(a.name), bi = charOrder.indexOf(b.name);
+    return (ai < 0 ? charOrder.length : ai) - (bi < 0 ? charOrder.length : bi);
+  });
+  var activeCoverage = 0, activeChar = 0;
+  function tabButtons(node, views, active){
+    node.hidden = views.length < 2;
+    node.innerHTML = views.map(function(v,i){
+      return '<button type="button" role="tab" id="' + node.id + '-tab-' + i + '"' +
+        ' aria-controls="' + node.id + '-panel-' + i + '" aria-selected="' + (i === active) + '"' +
+        ' tabindex="' + (i === active ? '0' : '-1') + '" data-i="' + i + '">' +
+        esc(v.name) + '</button>';
     }).join('');
   }
-  function pickDim(i){
-    activeDim = (i + dims.length) % dims.length;
-    renderTabs(); renderAll();
-    var t = $('char-tabs').querySelector('[aria-selected="true"]');
-    if (t && document.activeElement && document.activeElement.closest('#char-tabs')) t.focus();
+  function bindTabs(id, views, getActive, setActive){
+    var node = $(id);
+    node.addEventListener('click', function(e){
+      var button = e.target.closest('button');
+      if (button){ setActive(Number(button.dataset.i)); renderAll(); }
+    });
+    node.addEventListener('keydown', function(e){
+      var step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!step || !views.length) return;
+      e.preventDefault(); setActive((getActive() + step + views.length) % views.length);
+      renderAll(); node.querySelector('[aria-selected="true"]').focus();
+    });
   }
-  $('char-tabs').addEventListener('click', function(e){
-    var b = e.target.closest('button'); if (!b) return;
-    pickDim(Number(b.dataset.i));
-  });
-  $('char-tabs').addEventListener('keydown', function(e){
-    var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-    if (!d) return;
-    e.preventDefault(); pickDim(activeDim + d);
-  });
+  bindTabs('coverage-tabs', coverageViews, function(){ return activeCoverage; }, function(i){ activeCoverage = i; });
+  bindTabs('char-tabs', charViews, function(){ return activeChar; }, function(i){ activeChar = i; });
+  function panel(host, title, caption){
+    var wrap = document.createElement('div'); wrap.className = 'chart-panel';
+    var heading = document.createElement('h3'); heading.textContent = title; wrap.appendChild(heading);
+    var scroll = document.createElement('div'); scroll.className = 'scroller';
+    var svg = el('svg', {}); scroll.appendChild(svg); wrap.appendChild(scroll);
+    var legend = document.createElement('div'); legend.className = 'legend-row'; wrap.appendChild(legend);
+    var note = document.createElement('p'); note.className = 'caption'; note.textContent = caption;
+    wrap.appendChild(note); host.appendChild(wrap);
+    return { wrap: wrap, svg: svg, legend: legend };
+  }
+  function tabPanel(host, tabsId, views, active){
+    var activePanel;
+    views.forEach(function(view, i){
+      var wrap = document.createElement('div');
+      wrap.id = tabsId + '-panel-' + i;
+      wrap.setAttribute('role', 'tabpanel');
+      wrap.setAttribute('aria-labelledby', tabsId + '-tab-' + i);
+      wrap.setAttribute('tabindex', '0');
+      wrap.hidden = i !== active;
+      host.appendChild(wrap);
+      if (i === active) activePanel = wrap;
+    });
+    return activePanel;
+  }
+  function renderCoverage(){
+    if (!coverageViews.length){ hide('sec-coverage'); return; }
+    tabButtons($('coverage-tabs'), coverageViews, activeCoverage);
+    var host = $('coverage-panels'); host.textContent = '';
+    var view = coverageViews[activeCoverage];
+    var p = panel(tabPanel(host, 'coverage-tabs', coverageViews, activeCoverage), view.name, view.caption);
+    if (view.kind === 'reach') groupedBars(p.svg, view.rows, { aria: view.name, format: pct });
+    if (view.kind === 'channel') activityBars(p.svg, view.rows, { aria: view.name });
+    if (view.kind === 'social'){
+      baselineBars(p.svg, view.rows, { aria: view.name + ' versus network baseline' });
+      var caveat = document.createElement('p'); caveat.className = 'filter-note';
+      caveat.textContent = 'Activity reflects social referral clicks to external content, not direct on-platform activity.';
+      p.wrap.appendChild(caveat);
+    }
+    legendInto(p.legend);
+  }
+  function renderCharacteristics(){
+    if (!charViews.length){ hide('sec-char'); return; }
+    tabButtons($('char-tabs'), charViews, activeChar);
+    var host = $('char-panels'); host.textContent = '';
+    var activePanel = tabPanel(host, 'char-tabs', charViews, activeChar);
+    charViews[activeChar].charts.forEach(function(dim){
+      var p = panel(activePanel, dim.name, dim.caption);
+      if (dim.scale === 'customer-overlap') overlapBars(p.svg, dim.rows, { aria: dim.name + ' customer overlap' });
+      else if (dim.scale === 'ranked-strength') strengthBars(p.svg, dim.rows, { aria: dim.name + ' ranked strength' });
+      else baselineBars(p.svg, dim.rows, { aria: dim.name + ' versus network baseline' });
+      legendInto(p.legend);
+      if (dim.selection){
+        var note = document.createElement('p'); note.className = 'filter-note';
+        var groups = (dim.selection.categories || []).join(', ');
+        var subs = (dim.selection.subcategories || []).join(', ');
+        var origin = dim.selection.source === 'browser-observed' ? 'observed in CustomerPulse'
+          : dim.selection.source === 'dashboard-preset' ? 'CustomerPulse ' + (dim.selection.preset || '') + ' default'
+          : 'requested';
+        note.textContent = 'Selected filters (' + origin + '): ' +
+          (groups ? groups + (subs ? ' · ' + subs : '') : 'no category filters') +
+          (dim.selection.removeOutliers ? ' · Outliers removed' : '') +
+          ' · Sorted by ' + dim.selection.sortBy;
+        p.wrap.appendChild(note);
+      } else if (['Online Content Consumption', 'Transactions', 'Visitation', 'Financial & Household'].indexOf(dim.tab || dim.name) !== -1){
+        var unfiltered = document.createElement('p'); unfiltered.className = 'filter-note';
+        unfiltered.textContent = 'Shows returned rows without the dashboard’s category filters, so it can differ from the dashboard’s default view.';
+        p.wrap.appendChild(unfiltered);
+      }
+    });
+  }
 
   // Activity-by-Channel: a share-of-activity bar per channel (percentages, ranked).
   function activityBars(svg, rows, opts){
     opts = opts || {};
     if (!rows || !rows.length){ empty(svg.parentNode, opts.emptyMessage || 'No activity data.'); return; }
     if (SEGMENTS.length > 1) { groupedBars(svg, rows, { aria: opts.aria, format: pct }); return; }
-    var data = rows.map(function(r){ return { label: r.label, v: Number((r.values || [])[0]) || 0 }; });
+    var data = rows.filter(function(r){ return r.values && r.values[0] != null && isFinite(Number(r.values[0])); })
+      .map(function(r){ return { label: r.label, v: Number(r.values[0]) }; });
+    if (!data.length){ empty(svg.parentNode, 'No activity data.'); return; }
     var LABEL_W = 190, AREA_W = 440, ROW_H = 30, BAR_H = 18, TOP = 8, PAD = 70;
     var w = LABEL_W + AREA_W + PAD, h = TOP + data.length * ROW_H + 8;
     svg.textContent = ''; svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h); svg.setAttribute('style', 'max-width:' + w + 'px');
@@ -664,19 +780,50 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
     });
   }
 
+  // Customer Overlap is an audience percentage. A zero-based horizontal scale keeps
+  // all demographic bands legible, including the nineteen income bands.
+  function overlapBars(svg, rows, opts){
+    opts = opts || {};
+    if (!rows || !rows.length){ empty(svg.parentNode, 'No customer overlap data.'); return; }
+    var series = SEGMENTS.length || 1, LABEL_W = 210, AREA_W = 450;
+    var BAR_H = 14, ROW_H = 12 + series * 20, TOP = 10, PAD = 70;
+    var w = LABEL_W + AREA_W + PAD, h = TOP + rows.length * ROW_H + 8;
+    svg.textContent = ''; svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svg.setAttribute('style', 'max-width:' + w + 'px');
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', opts.aria || 'Customer overlap');
+    var vals = rows.reduce(function(a,r){ return a.concat((r.values || []).filter(function(v){ return v != null; }).map(Number)); }, []);
+    var max = Math.max.apply(null, vals.concat([1]));
+    var muted = hsl('--muted-foreground'), border = hsl('--border');
+    svg.appendChild(el('line', { x1:LABEL_W, y1:TOP, x2:LABEL_W, y2:h - 8, stroke:border }));
+    rows.forEach(function(row, ri){
+      var y0 = TOP + ri * ROW_H;
+      var label = el('text', { x:LABEL_W - 12, y:y0 + ROW_H / 2,
+        'text-anchor':'end', 'dominant-baseline':'middle', 'font-size':12, fill:muted }, fit(row.label, 29));
+      label.appendChild(el('title', {}, row.label)); svg.appendChild(label);
+      (row.values || []).forEach(function(v, si){
+        if (v == null || !isFinite(Number(v))) return;
+        var width = Math.max(2, Number(v) / max * AREA_W), cy = y0 + 13 + si * 20;
+        svg.appendChild(el('rect', { x:LABEL_W, y:cy - BAR_H / 2, width:width,
+          height:BAR_H, rx:2, fill:segColor(si) }));
+        svg.appendChild(el('text', { x:LABEL_W + width + 7, y:cy,
+          'dominant-baseline':'middle', 'font-size':11, 'font-weight':600, fill:muted }, pct(v)));
+      });
+    });
+  }
+
   // Baseline bar: relative over/under-index vs the Network Baseline (0%). Bars extend right
   // above the line and left below it, so a below-baseline value is drawn honestly rather than
   // falling off the axis. Every segment is rendered against the same zero line.
   function baselineBars(svg, rows, opts){
     opts = opts || {};
     if (!rows || !rows.length){ empty(svg.parentNode, opts.emptyMessage || 'No data for this view.'); return; }
-    // Bound SVG complexity for embedded Chromium hosts even if an unvalidated payload slips in.
-    var data = rows.slice(0, 20), series = SEGMENTS.length || 1;
-    var LABEL_W = 170, AREA_W = 470, ROW_H = 30 + (series - 1) * 10, BAR_H = series > 1 ? 9 : 18, TOP = 38, PAD = 16;
+    // Keep the detailed-view limit even if the producer supplies too many rows.
+    var data = rows.slice(0, 50), series = SEGMENTS.length || 1;
+    var LABEL_W = 250, AREA_W = 420, ROW_H = 30 + (series - 1) * 10, BAR_H = series > 1 ? 9 : 18, TOP = 38, PAD = 16;
     var w = LABEL_W + AREA_W + PAD, hh = TOP + data.length * ROW_H + 10;
     svg.textContent = ''; svg.setAttribute('viewBox', '0 0 ' + w + ' ' + hh); svg.setAttribute('style', 'max-width:' + w + 'px');
     svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', opts.aria || 'Relative difference from network baseline');
-    var vals = data.reduce(function(a, row){ return a.concat((row.values || []).map(Number)); }, []);
+    var vals = data.reduce(function(a, row){ return a.concat((row.values || []).filter(function(v){ return v != null; }).map(Number)); }, []);
     var lo = Math.min(0, Math.min.apply(null, vals)), hi = Math.max(0, Math.max.apply(null, vals));
     var span = (hi - lo) || 1, p = span * 0.08;
     var min = lo - (lo < 0 ? p : 0), max = hi + (hi > 0 ? p : 0);
@@ -684,6 +831,9 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
     if (min === max){ min = -1; max = 1; }
     var x = function(v){ return LABEL_W + (v - min) / (max - min) * AREA_W; };
     var zeroX = x(0), muted = hsl('--muted-foreground'), ink = hsl('--foreground');
+    // A single segment draws in --primary, which is near-white in the dark theme, so a
+    // label inside the bar takes --primary-foreground rather than a fixed white.
+    var onBar = SEGMENTS.length === 1 ? hsl('--primary-foreground') : '#fff';
     svg.appendChild(el('line', { x1: zeroX, y1: TOP - 8, x2: zeroX, y2: hh - 6, stroke: muted, 'stroke-width': 1, 'stroke-dasharray': '3 3' }));
     var baselineAtRight = zeroX > w - 72, baselineAtLeft = zeroX < 72;
     svg.appendChild(el('text', {
@@ -694,28 +844,23 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--
     }, opts.baselineLabel || 'Network Baseline'));
     data.forEach(function(row, i){
       var cy = TOP + i * ROW_H + ROW_H / 2;
-      var t = el('text', { x: LABEL_W - 12, y: cy, 'text-anchor': 'end', 'dominant-baseline': 'middle', 'font-size': 12, fill: muted }, fit(row.label, 20));
+      var t = el('text', { x: LABEL_W - 12, y: cy, 'text-anchor': 'end', 'dominant-baseline': 'middle', 'font-size': 12, fill: muted }, fit(row.label, 36));
       t.appendChild(el('title', {}, row.label)); svg.appendChild(t);
-      (row.values || []).forEach(function(raw, si){ var v = Number(raw); if (!isFinite(v)) return; var xv = x(v), left = Math.min(zeroX, xv), width = Math.max(2, Math.abs(xv - zeroX)), gap = (si - (series - 1) / 2) * 10, inside = width > 42;
+      (row.values || []).forEach(function(raw, si){ if (raw == null) return; var v = Number(raw); if (!isFinite(v)) return; var xv = x(v), left = Math.min(zeroX, xv), width = Math.max(2, Math.abs(xv - zeroX)), gap = (si - (series - 1) / 2) * 10, inside = width > 42;
         svg.appendChild(el('rect', { x:left, y:cy-BAR_H/2+gap, width:width, height:BAR_H, rx:2, fill:segColor(si) }));
-        svg.appendChild(el('text', { x:v >= 0 ? (inside ? xv-6 : xv+6) : (inside ? xv+6 : xv-6), y:cy+gap, 'dominant-baseline':'middle', 'text-anchor':v >= 0 ? (inside ? 'end':'start') : (inside ? 'start':'end'), 'font-size':10, 'font-weight':600, fill:inside?'#fff':ink }, (v>0?'+':'')+(Math.round(v*10)/10)+'%'));
+        svg.appendChild(el('text', { x:v >= 0 ? (inside ? xv-6 : xv+6) : (inside ? xv+6 : xv-6), y:cy+gap, 'dominant-baseline':'middle', 'text-anchor':v >= 0 ? (inside ? 'end':'start') : (inside ? 'start':'end'), 'font-size':10, 'font-weight':600, fill:inside?onBar:ink }, (v>0?'+':'')+pct(v)));
       });
     });
   }
 
   function renderAll(){
-    activityBars($('chart-activity'), D.activityChannel, { aria: 'Activity by channel' });
-    baselineBars($('chart-social'), D.activitySocial, { aria: 'Activity by social channel versus network baseline' });
-    if (dims.length){
-      var dim = dims[activeDim];
-      (dim.scale === 'ranked-strength' ? strengthBars : baselineBars)($('chart-char'), dim.rows, { aria: dim.name + (dim.scale === 'ranked-strength' ? ' ranked strength' : ' versus network baseline') });
-    }
-    if (!D.activityChannel || !D.activityChannel.length) hide('sec-activity');
-    if (!D.activitySocial || !D.activitySocial.length) hide('sec-social');
+    renderCoverage();
+    renderCharacteristics();
   }
 
   // OS-change re-render is handled by the theme toggle block above.
-  renderTabs();
   renderAll();
 })();
 </script>
+</body>
+</html>

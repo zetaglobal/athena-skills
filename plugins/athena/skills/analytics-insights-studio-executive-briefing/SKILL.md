@@ -193,19 +193,19 @@ filters; missing or failed sections; as-of timestamp.
 ```
 
 Do not print raw source manifests or internal IDs in the default answer. End with a short offer based
-on what is actually available:
+on what is actually available. Never offer a full-dataset table export.
 
 - deeper analysis using the existing normalized data where possible
-- full returned rows as a portable Markdown table
-- navigation to the relevant ZMP surface only when a URL was actually returned by MCP or the user
-  explicitly asks to open a known visible browser surface
+- navigation to Insights Studio using the fixed landing URL below, a relevant MCP-returned URL,
+  or a known visible browser surface when the user explicitly asks to open it
 - an optional self-contained shareable HTML summary
 
 Never imply that Athena created or saved a ZMP report. Distinguish these URL states:
 
 - an MCP-returned redirect/report URL may be offered and recorded in provenance
 - a browser-visible URL is UI validation evidence, not an MCP-returned URL
-- a generic Insights Studio landing URL is navigation, not the source of metric values
+- the fixed Insights Studio landing URL, `https://app.zetaglobal.net/reports/insights-studio`,
+  is navigation, not the source of metric values; it does not need to be returned by MCP
 
 ## Browser cross-checks
 
@@ -230,7 +230,9 @@ Create HTML only when the user explicitly asks for a shareable HTML summary. Reu
 model; do not refetch data unless the requested artifact needs a field that was never fetched and the
 user asks to expand scope.
 
-1. Map normalized sections into the existing `template.html` placeholders.
+1. Map normalized sections into the existing `template.html` placeholders. Set `zmpUrl` to a relevant
+   MCP-returned URL when available; otherwise retain the fixed Insights Studio landing URL so the
+   Go to ZMP button remains available. Do not record this fixed navigation URL as MCP-returned provenance.
 2. Include a source manifest for every rendered KPI, trend, and breakdown: tool, exact arguments,
    returned columns, row count, and status. Include only an actual MCP-returned URL as a returned URL.
 3. Validate the assembled JSON with:

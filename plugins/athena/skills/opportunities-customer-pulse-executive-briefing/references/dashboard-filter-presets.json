@@ -1,0 +1,128 @@
+{
+ "_about": "Default category/subcategory presets of the CustomerPulse dashboard, captured on 2026-09-25 for approximate alignment. The dashboard picks a preset from the report vertical_name (customer_pulse_audiences) by splitting on \"_\" and capitalizing each word: telecom -> Telecom, financial_services -> Financial Services. A vertical with no preset here (for example generic) starts every interest section unfiltered. User-supplied or browser-observed selections win. Preserve topic labels returned by the MCP.",
+ "sections": {"behavioral":"Online Content Consumption","transactional":"Transactions","visitation":"Visitation","creditbureau":"Financial & Household"},
+ "rules": [
+  "Keep rows whose ParentGroup is one of the section categories (all rows when there are none).",
+  "Of the preset subcategories, keep only those that appear as a SubGroup among those rows; if none remain, apply no subcategory filter, as the dashboard does.",
+  "Otherwise keep rows whose SubGroup is one of the remaining subcategories.",
+  "The dashboard selects at most 4 categories; a preset with more is unverified.",
+  "When Remove Outliers is enabled, drop outliers; drop null differences. Preserve returned topic labels; sort by network_baseline_difference when Sort by Indexing is selected, largest first; keep up to 50 retrieved rows."
+ ],
+ "unverified": ["Insurance / behavioral lists 5 categories; the dashboard selector allows 4."],
+ "presets": {
+  "Automotive": {
+   "behavioral": {"categories":["Automotive","Financial Services","Life Events","Services"],"subcategories":["Auto Accessories","Auto Brand","Auto Class","Auto Make/Model","Financial Services Insurance","Financial Services Loans","New Parent","New Mover","Automotive Services","Automotive Brands","Insurance"]},
+   "transactional": {"categories":["Automotive","Travel","Consumer Services"],"subcategories":["Auto Parts","Gas Stations","Auto Rentals","Insurance"]},
+   "visitation": {"categories":["Automotive","Travel","Financial Services","Food & Pharmacy"],"subcategories":["Auto Parts","Gas Stations","Luxury Cars","Motorcycles","Standard Cars","Auto Rentals","Banks","Convenience Stores"]},
+   "creditbureau": {"categories":["Automotive & Vehicle","Consumer Finance","Interest & Hobby","Retail Purchase"],"subcategories":["Auto Class","Auto Lease","Auto Loan","Motorcycle","Auto Insurance","Automotive","Automotive Products","Loans","Recreation","Travel"]}
+  },
+  "Financial Services": {
+   "behavioral": {"categories":["Business","Financial Services","Law, Government, & Politics","Real Estate"],"subcategories":["Business Industry","Banking","Insurance","Loans","Investing","Social Policies","Business Overall","Business Type","Credit Reporting","Finance","Cryptocurrencies","Economy","Legal Issues","Real Estate Services"]},
+   "transactional": {"categories":["Automotive","Home","Travel","Consumer Services"],"subcategories":["Educational Services","Auto Parts","Auto Rentals","Home Improvement","International Airlines","Airlines","Cruise","Luxury Hotels","Medical Services","Dental Products & Services","Banking & Brokerage Services"]},
+   "visitation": {"categories":["Financial Services","Education","Automotive","Travel"],"subcategories":[]},
+   "creditbureau": {"categories":["Consumer Finance","Automotive & Vehicle","Home Ownership / Property","Household Composition"],"subcategories":["Auto Insurance","Auto Loan","Credit Cards","Banks","Home Loan","Mortgage","Net Worth","Personal Loan","Property Insurance","Wealth rating","Insurance","Investment","Available Home Equity"]}
+  },
+  "Retail": {
+   "behavioral": {"categories":["Electronics","Retail & Consumer Goods","Services","Entertainment"],"subcategories":["Computers","Household Goods","Foods","Beverages","Pet Supplies","Clothing and Accessories","Retail Stores","Video Games","Babies & Kids","Luxury Goods","Consumer Services","Food Delivery","Retail Overall","Beauty","Food and Beverage","Bargains","Beauty & Cosmetics","Clothing & Accessories","E-commerce Stores","Home Decor","Home Décor"]},
+   "transactional": {"categories":["Apparel & Accessories","Mass Retailers","Office, Electronics, Games","Specialty Retail"],"subcategories":[]},
+   "visitation": {"categories":["Apparel & Accessories","Food & Pharmacy","Mass Retailers","Specialty Retail"],"subcategories":["Clothing and Accessories","Retail Stores","Beauty","Luxury Goods","New Mover","New Parent","Dining","Holidays","Special Occasions","Special Occations","Shoes","Babies & Kids","E-Commerce Stores"]},
+   "creditbureau": {"categories":["Retail Purchase","Consumer Finance"],"subcategories":["Home","Apparels","Arts & Crafts","Big Box Retail","Credit Purchase","Gifts","Music","Automotive Products","Children's Apparel & Toys","Discretionary Spend","Credit Cards"]}
+  },
+  "Dining": {
+   "behavioral": {"categories":["Recreation","Travel","Society","Services"],"subcategories":["Food Delivery","Dining","Hotels","Consumer Services","Special Occasions","Special Occations","Recreation","Culture","Holidays"]},
+   "transactional": {"categories":["Entertainment","Food & Pharmacy","Restaurant","Travel"],"subcategories":["Casual Restaurants","Fine Dining","Quick Serve Restaurants","Economy Hotels","Movies","Tickets","Food Delivery Services","Meal Kit Services","International Airlines","Airlines","Cruise","Luxury Hotels"]},
+   "visitation": {"categories":["Restaurant","Entertainment","Travel"],"subcategories":["Casual Restaurants","Airports","Luxury Hotels","Quick Serve Restaurants","Movies"]},
+   "creditbureau": {"categories":["Interest & Hobby","Retail Purchase","Consumer Finance"],"subcategories":["Alcoholic Beverages","Music","Outdoor Activities","Credit Cards","Credit Score","Banks","Personal Loan","Discretionary Spend","Year-over-Year Spend"]}
+  },
+  "Entertainment": {
+   "behavioral": {"categories":["Entertainment","Recreation","Sports","Retail & Consumer Goods"],"subcategories":["Baseball","Basketball","TV Shows","Video Games","Soccer","Computers","Movie Genre","Music","Dining","Combat Sports","Events","Games","Watercraft","Sports & Recreation","Sports","Action Movies","Family Movies","Recreation","Entertainment","Comedy Movies"]},
+   "transactional": {"categories":["Consumer Services","Entertainment","Restaurant","Travel"],"subcategories":["Movies","Streaming Music & Video","Tickets","International Airlines","Airlines","Cruise","Luxury Hotels","Casual Restaurants","Fine Dining","Quick Serve Restaurants","Amusement Parks","Cable, Satellite, Other","Dating Services"]},
+   "visitation": {"categories":["Entertainment","Specialty Retail","Office, Electronics, Games","Consumer Services"],"subcategories":["Amusement Parks","Movies","Bowling","Casinos","Cable, Satellite, Other","Consumer Electronics","Alcoholic Beverages"]},
+   "creditbureau": {"categories":["Consumer Finance","Interest & Hobby","Retail Purchase"],"subcategories":["Gaming","Gambling","Alcoholic Beverages","Recreation","Sports","Technology","Movies","Music","Outdoor Activities","Entertainment","Gifts"]}
+  },
+  "Travel": {
+   "behavioral": {"categories":["Recreation","Travel","Society","Services"],"subcategories":["Travel Regions","Airlines","Dining","Hotels","Holidays","Special Occasions","Special Occations","Travell Overall","Travel Type","Car Rentals","Destinations","Resorts","Seasonal Travel","Lodging"]},
+   "transactional": {"categories":["Travel","Automotive","Entertainment","Food & Pharmacy"],"subcategories":["Gas Stations","Auto Rentals","Luxury Hotels","Mid-tier Hotels","Airlines","Amusement Parks","Travel Services","Tickets","Cruise","International Airlines","Convenience Stores"]},
+   "visitation": {"categories":["Automotive","Travel","Entertainment","Food & Pharmacy"],"subcategories":["Auto Parts","Airports","Luxury Hotels","Mid-tier Hotels","Economy Hotels","Extended Stay Hotels","Gas Stations","Amusement Parks","Casinos","Convenience Stores"]},
+   "creditbureau": {"categories":["Automotive & Vehicle","Consumer Finance","Interest & Hobby"],"subcategories":["Travel","Credit Cards","Discretionary Spend","Personal Loan","Insurance","Outdoor Activities","Recreation"]}
+  },
+  "Technology": {
+   "behavioral": {"categories":["Retail & Consumer Goods","Science","Technology","Electronics"],"subcategories":["Technology Companies","Computers","Telecom Companies","Electronics Overall","Internet","Information Security","Mobile Devices","Technology Overall","Software","Artificial Intelligence","Console Gaming","Electronic Devices"]},
+   "transactional": {"categories":["Consumer Services","Office, Electronics, Games","Entertainment","Food & Pharmacy"],"subcategories":["Video/PC Game Stores","Streaming Music & Video","Software Services","Wireless Carriers","Food Delivery Services","Meal Kit Services","Consumer Electronics","Tickets","Cable, Satellite, Other","Tax Tools & Services"]},
+   "visitation": {"categories":["Office, Electronics, Games","Consumer Services","Entertainment"],"subcategories":["Cable, Satellite, Other","Consumer Electronics","Wireless Carriers","Movies"]},
+   "creditbureau": {"categories":["Interest & Hobby","Consumer Finance","Retail Purchase"],"subcategories":["Consumer Electronics","Credit Cards","Credit Purchase","Entertainment","Music","Gaming","Technology","Purchasing Channel"]}
+  },
+  "Healthcare": {
+   "behavioral": {"categories":["Health","Services","Life Events","Law, Government, & Politics"],"subcategories":["Health Specialty","Medical Conditions","Medications","Emergency Services","Aesthetic","Consumer Services","New Parent","Social Policies","Healthcare Ovarall","Medical Procedures","Auditory Health","Nutrition","Alternative Medicine","Medical Specialties","Medical Services"]},
+   "transactional": {"categories":["Food & Pharmacy","Consumer Services"],"subcategories":["Drug Stores","Vitamin Shops","Convenience Stores","Medical Services","Health Club","Weight Loss Services","Dental Products & Services","Insurance"]},
+   "visitation": {"categories":["Food & Pharmacy","Specialty Retail"],"subcategories":["Convenience Stores","Drug Stores","Beauty & Cosmetics"]},
+   "creditbureau": {"categories":["Retail Purchase","Household Composition","Consumer Finance"],"subcategories":["Health & Beauty","Children Ages","Family Position","Generations in Household","Number of Children in Household","Number of people in the Household","Life Insurance"]}
+  },
+  "Insurance": {
+   "behavioral": {"categories":["Financial Services","Automotive","Home","Real Estate","Health"],"subcategories":["Insurance","Real Estate Services","Financial Planning","Investing","Medical Services"]},
+   "transactional": {"categories":["Home","Consumer Services","Travel"],"subcategories":["Health Clubs","Educational Services","Insurance","Medical Services","Weight Loss Services","Dental Products & Services","Logistics","Moving & Storage","Wireless Carriers","Home Advising Services","Home Improvement","Home Furnishing","Auto Rentals","Luxury Hotels","Mid-tier Hotels","Airlines","Travel Services","Cruise","International Airlines","Duty Free Shops"]},
+   "visitation": {"categories":["Automotive","Travel","Financial Services","Home"],"subcategories":[]},
+   "creditbureau": {"categories":["Consumer Finance","Home Ownership / Property","Automotive & Vehicle"],"subcategories":["Auto Insurance","Insurance","Life Insurance","Property Insurance","Mortgage","Mortgage Loan Amount","Mortgage Loan Type","Mortgage Duration"]}
+  },
+  "Telecom": {
+   "behavioral": {"categories":["Technology","Life Events","Services","Real Estate"],"subcategories":["Telecom Companies","New Mover","New Parent","Business Services","Emergency Services","Food Delivery","Mobile Devices","Home Services","Consumer Services","Information Security"]},
+   "transactional": {"categories":["Consumer Services","Mass Retailers","Entertainment","Home"],"subcategories":["Cable, Satellite, Other","Wireless Carriers","Digital Retail & Services","Logistics","Moving & Storage","Streaming Music & Video","Home Advising Services","Home Improvement","Home Furnishing"]},
+   "visitation": {"categories":["Consumer Services","Office, Electronics, Games"],"subcategories":["Wireless Carriers","Cable, Satellite, Other","Consumer Electronics","Moving & Storage"]},
+   "creditbureau": {"categories":["Interest & Hobby","Retail Purchase"],"subcategories":["Technology","Music","Consumer Electronics","Gaming","Purchasing Channel","Movies","Entertainment","News"]}
+  },
+  "Apparel Stores": {
+   "behavioral": {"categories":["Retail & Consumer Goods","Life Events","Recreation","Society"],"subcategories":["Clothing and Accessories","Retail Stores","Beauty","Luxury Goods","New Mover","New Parent","Dining","Holidays","Special Occasions","Special Occations","Shoes","Babies & Kids","E-Commerce Stores","Clothing & Accessories","Clothing & Accessory Brands -Everyday","Clothing & Accessory Brands -Premium","Bargains"]},
+   "transactional": {"categories":["Apparel & Accessories","Specialty Retail","Mass Retailers"],"subcategories":[]},
+   "visitation": {"categories":["Apparel & Accessories","Specialty Retail","Consumer Services"],"subcategories":["Children's Apparel & Toys","Apparel Stores","Footwear","Jewelry","Sporting Goods","Optical","Women's Apparel Stores","Beauty Cosmetics","Department Stores","Luxury Department Stores","Men's Apparel Stores","Health Clubs"]},
+   "creditbureau": {"categories":["Retail Purchase","Interest & Hobby","Consumer Finance","Household Composition"],"subcategories":["Children's Apparel & Toys","Fashion & Jewelry","Gifts","Apparels","Credit Score","Credit Cards","Discretionary Spend","Personal Loan","Household Composition","Number of Children in Household"]}
+  },
+  "Department Stores": {
+   "behavioral": {"categories":["Retail & Consumer Goods","Electronics","Home","Society"],"subcategories":["Bath Goods","Beauty & Cosmetics","Furniture","Household Goods","Outdoor Living","Pet Supplies","Retail Stores"]},
+   "transactional": {"categories":["Apparel & Accessories","Mass Retailers","Specialty Retail","Office, Electronics, Games"],"subcategories":[]},
+   "visitation": {"categories":["Apparel & Accessories","Consumer Services","Office, Electronics, Games","Specialty Retail"],"subcategories":["Children's Apparel & Toys","Apparel Stores","Footwear","Jewelry","Sporting Goods","Optical","Women's Apparel Stores","Beauty Cosmetics","Department Stores","Luxury Department Stores","Men's Apparel Stores","Health Clubs","Consumer Electronics","Office Supplies","Pets","Miscellaneous Retail"]},
+   "creditbureau": {"categories":["Retail Purchase","Interest & Hobby","Consumer Finance"],"subcategories":["Arts & Crafts","Alcoholic Beverages","Children's Apparel & Toys","Sports","Consumer Electronics","Recreation","Health & Fitness","Music","Gifts","Entertainment","Credit Score","Credit Cards","Discretionary Spend","Big Box Retail","Credit Purchase"]}
+  },
+  "Home": {
+   "behavioral": {"categories":["Financial Services","Retail & Consumer Goods","Real Estate","Home"],"subcategories":["Home Decor","Home Décor","Electrical & Fixtures","Furniture","Interior & Home Design","Household Goods","Home Improvement"]},
+   "transactional": {"categories":["Home","Consumer Services","Mass Retailers","Food & Pharmacy"],"subcategories":["Home Advising Services","Home Improvement","Home Furnishing","Moving & Storage","Logistics","News & Magazines","Insurance","Banking & Brokerage Services","Cable , Satellite, Other","Mass Merchant","Wireless Carriers","Club Warehouses","Convenience Stores","Drug Stores","Grocery","Meal Kit Services","Food Delivery Services"]},
+   "visitation": {"categories":["Home","Financial Services","Specialty Retail","Food & Pharmacy"],"subcategories":["Home Improvement","Arts & Crafts","Miscellaneous Retail","Banks","Home Furnishing","Club Warehouses","Convenience Stores","Drug Stores","Grocery"]},
+   "creditbureau": {"categories":["Home Ownership / Property","Consumer Finance","Interest & Hobby"],"subcategories":["Available Home Equity","Credit Cards","Credit Score","Home Built Year","Home Equity","Home Features","Home size","Home Value","Mortgage Duration","Property Type","Property Size","Roofing Material","Property Insurance","Business","Home"]}
+  },
+  "Hotel": {
+   "behavioral": {"categories":["Travel","Recreation","Services","Society"],"subcategories":["Travel Regions","Hotels","Holidays","Dining","Consumer Services","Special Occasions","Special Occations"]},
+   "transactional": {"categories":["Travel","Entertainment","Consumer Services","Automotive"],"subcategories":["Auto Rentals","Luxury Hotels","Mid-tier Hotels","Airlines","Amusement Parks","Travel Services","Tickets","Cruise","International Airlines","Banking & Brokerage Services","Insurance","Gas Stations"]},
+   "visitation": {"categories":["Travel","Food & Pharmacy","Entertainment","Automotive"],"subcategories":["Luxury Hotels","Mid-tier Hotels","Economy Hotels","Extended Stay Hotels","Convenience Stores","Amusement Parks","Casinos","Gas Stations"]},
+   "creditbureau": {"categories":["Interest & Hobby","Consumer Finance"],"subcategories":["Travel","Credit Cards","Outdoor Activities","Recreation","Discretionary Spend"]}
+  },
+  "Cpg": {
+   "behavioral": {"categories":["Retail & Consumer Goods","Services","Electronics","Home"],"subcategories":["Food and Beverage","Beauty","Pet Supplies","Household Goods","Business Industry","Babies & Kids","Food Delivery","Consumer Services","Foods","Beverages","Beauty & Cosmetics","Clothing & Accessories","Electronic Devices","Non-Alcoholic Beverages","School & Office Supplies"]},
+   "transactional": {"categories":["Food & Pharmacy","Specialty Retail"],"subcategories":[]},
+   "visitation": {"categories":["Specialty Retail","Food & Pharmacy","Mass Retailers","Office, Electronics, Games"],"subcategories":[]},
+   "creditbureau": {"categories":["Retail Purchase","Interest & Hobby","Household Composition"],"subcategories":["Arts & Crafts","Number of Children in Household","Presence of pets","Number of people in the household","Children Ages",".","Alcoholic Beverages","Big Box Retail","Health & Beauty"]}
+  },
+  "Education": {
+   "behavioral": {"categories":["Humanities","Education","Science","Life Events"],"subcategories":["Arts","Educations Medium","College & University","Literature","Humanity Fields","Education Level"]},
+   "transactional": {"categories":["Consumer Services","Entertainment","Office, Electronics, Games","Food & Pharmacy"],"subcategories":["Educational Services","Consumer Electronics","Streaming Music & Video","Banking & Brokerage Services","Insurance","Wireless Carriers","Convenience Stores","Grocery","Drug Stores"]},
+   "visitation": {"categories":["Education","Financial Services","Office, Electronics, Games","Consumer Services"],"subcategories":[]},
+   "creditbureau": {"categories":["Interest & Hobby","Consumer Finance","Household Composition","Retail Purchase"],"subcategories":["Banks","Loans","Career","Reading","Book Stores","Consumer Electronics","Children's Apparel & Toys","Children Ages","Generations in Household","Number of Children in Household"]}
+  },
+  "Grocery & Convenience": {
+   "behavioral": {"categories":["Retail & Consumer Goods","Business","Electronics","Life Events"],"subcategories":["Pet Supplies","Household Goods","Business Industry","New Mover","New Parent","Foods","Cuisines","Alcoholic Beverages","Non-Alcoholic Beverages","Beverages","Bargains"]},
+   "transactional": {"categories":["Apparel & Accessories","Food & Pharmacy","Specialty Retail"],"subcategories":["Discount Stores","Beauty Cosmetics","Miscellaneous Retail","Convenience Stores","Drug Stores","Vitamin Shops"]},
+   "visitation": {"categories":["Apparel & Accessories","Food & Pharmacy","Specialty Retail"],"subcategories":["Convenience Stores","Drug Stores","Grocery","Discount Stores","Beauty Cosmetics","Arts & Crafts","Miscellaneous Retail","Pets"]},
+   "creditbureau": {"categories":["Retail Purchase","Interest & Hobby","Consumer Finance"],"subcategories":["Arts & Crafts","Children's Apparel & Toys","Sports","Health & Fitness","Book Stores","Credit Score","Credit Cards","Discretionary Spend","Insurance"]}
+  },
+  "Home Furnishing": {
+   "behavioral": {"categories":["Financial Services","Retail & Consumer Goods","Business","Technology"],"subcategories":["Financial Services Loans","Household Goods","Technology Companies","Furniture","Furniture Brands","Electrical & Fixtures","Hardware","Home Decor","Outdoor Living","Retail Stores"]},
+   "transactional": {"categories":["Home","Consumer Services","Mass Retailers"],"subcategories":["Home Furnishing","Moving & Storage","Logistics","News & Magazines","Insurance","Banking & Brokerage Services","Cable , Satellite, Other","Mass Merchant"]},
+   "visitation": {"categories":["Home","Financial Services","Specialty Retail"],"subcategories":["Home Furnishing","Arts & Crafts","Miscellaneous Retail","Banks"]},
+   "creditbureau": {"categories":["Home Ownership / Property","Consumer Finance","Business"],"subcategories":["Available Home Equity","Credit Cards","Credit Score","Home Built Year","Home Equity","Home Features","Home size","Home Value","Mortgage Duration","Property Type","Property Size","Roofing Material","Property Insurance","Business"]}
+  },
+  "Consumer Services": {
+   "behavioral": {"categories":["Services","Business","Real Estate"],"subcategories":["Business Services","Consumer Services","Emergency Services","Food Delivery","Business Industry","Automotive Services","Construction Services","Financial Planning","Home Services","Real Estate Services"]},
+   "transactional": {"categories":["Consumer Services","Mass Retailers","Specialty Retail"],"subcategories":["Business Services","Health Club","Logistics","Software Services","Print & Photography Services","Moving & Storage","Digital Retail & Services","Pets","Florists","Miscellaneous Retail"]},
+   "visitation": {"categories":["Consumer Services","Education","Automotive"],"subcategories":["Health Clubs","Logistics","Moving & Storage","Colleges & Universities","Gas Stations"]},
+   "creditbureau": {"categories":["Consumer Finance","Household Composition","Business"],"subcategories":["Credit Cards","Credit Score","Discretionary Spend","Wealth Rating","Net Worth","Number of Children in Household","Presence of pets","Number of people in the household","Children Ages","Generations in Household","Family Position","Business"]}
+  }
+ }
+}

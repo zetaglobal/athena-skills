@@ -22,6 +22,11 @@ This skill is read-only. Never expose absolute person, customer, or record count
 findings into plain language; percentages and rates may be shown. Do not invent values, substitute
 adjacent fields, or treat a missing tool as empty customer data.
 
+In text and HTML briefings, display every percentage and percentage-point difference rounded to
+the nearest whole number, with no decimal places (for example, `84.87%` becomes `85%`). This applies
+to prose, Highlights, chart labels, legends, and tooltips. Keep full precision in source data,
+normalized numeric values, calculations, sorting, and chart geometry; round only for display.
+
 ## Route the request
 
 1. **No segment named, including a bare invocation:** call `customer_pulse_audiences`, then follow
@@ -35,9 +40,10 @@ adjacent fields, or treat a missing tool as empty customer data.
 4. **Full, detailed, comprehensive, or "everything" request:** run the expanded cross-aspect
    workflow before returning the brief.
 5. **Full dataset or expanded table:** reuse the current normalized ledger, fetch any explicitly
-   requested missing aspects once, and render the table below. Do not refetch usable aspects.
-6. **Shareable, self-contained HTML summary:** reuse the current ledger when available, then follow
-   the [shareable HTML summary](#shareable-html-summary) workflow.
+   requested missing aspects once, and render the table below. Do not refetch usable aspects; for
+   an aspect whose ledger recorded `has_more: true`, follow its recorded `continuation_id` instead.
+6. **Shareable, self-contained HTML summary:** follow the
+   [shareable HTML summary](#shareable-html-summary) workflow, reusing available data and applying the documented dashboard filters.
 
 Infer intent from natural language. Do not ask the user to choose a tool or dimension when their
 question is already clear.
@@ -149,9 +155,14 @@ templates, exports, or every Customer Pulse tool for an ordinary conversational 
 
 ### Resolve once
 
-Call `customer_pulse_coverage` with the exact supplied report name. If it returns usable Coverage,
-Reachability, Preferred Channel, or Social Platform rows, or explicitly resolves the exact name,
-preserve that name and reuse the response.
+Call `customer_pulse_coverage` with the exact supplied report name in the `audience_names` array
+(`{"audience_names": ["<exact name>"]}`), the argument every `customer_pulse_*` data tool uses for
+report names. If it returns usable Coverage, Reachability, Preferred Channel, or Social Platform
+rows, or explicitly resolves the exact name, preserve that name and reuse the response.
+
+An all-empty response whose block names lack the `_0` suffix (for example
+`customer_pulse_reachability` instead of `customer_pulse_reachability_0`) means the call was
+malformed, not that the audience is empty: retry once with `audience_names`.
 
 If unresolved, make one retry containing at most three candidates: exact name, date suffix removed,
 and spaces/underscores swapped. An all-empty result means unresolved, not an empty audience.
@@ -175,15 +186,23 @@ aspects in these waves:
 4. Normalize all three.
 5. CTV and Linear TV only when already callable.
 
-Never place more than three large Customer Pulse calls in one batch. Never retry automatically.
-A timeout, error, empty response, missing optional tool, or oversized presentation degrades only
-that section. Compact available rows and continue; do not call an aspect again just to simplify
-parsing. Do not paginate for completeness. For a focused request only, use at most one continuation
-page when the first page cannot support one takeaway.
+Never place more than three large Customer Pulse calls in one batch. Never retry automatically,
+including while building HTML. A failure degrades only that section; name it in
+`sourceLimit` for the HTML. A structured error or `data: null` with errors is a failed call even
+when the wrapper says `isError: false`; never treat it as empty audience data. An empty response,
+missing optional tool, or
+oversized presentation also degrades only that section. Compact available rows and continue; do not call an aspect again just to simplify
+parsing. For ordinary briefs, do not paginate for completeness. For a focused request only, use at
+most one continuation page when the first page cannot support one takeaway. When the user
+explicitly asks for the full returned dataset, follow `__metadata.continuation_id` with
+`continuation_data` until `has_more` is false or a page fails. Deduplicate continuation rows by
+their source identifiers or category plus label. If pagination fails, label the dataset partial and
+state which aspect stopped.
 
 For each response immediately record: aspect, usable block families, all displayable rows in a
-compact normalized form, strongest supported signals, one to three takeaways, `redirect_url`, and
-`usable`, `empty`, or `failed`. Discard counts, raw internal scores, overall matched/not-matched
+compact normalized form, strongest supported signals, one to three takeaways, `redirect_url`,
+`has_more` and `continuation_id` from `__metadata`, whether pagination completed, and `usable`,
+`empty`, or `failed`. Discard counts, raw internal scores, overall matched/not-matched
 Coverage, and geography during normalization. This ledger must support the later full-data table
 and HTML without refetching.
 
@@ -196,8 +215,18 @@ suggest without inventing causation.
 - Signed or convertible baseline differences support over/under-index language.
 - A standalone non-negative `scaled_zscore` supports ranked-strength language only.
 - Counts may inform internal ranking but never appear.
-- Preferred Channel percentages describe channel preference, not reach, addressability, or audience
-  membership. Use Reachability rows only for reach or addressability claims.
+- Interest, persona, and visitation blocks can return values as strings (for example `"26.0"`).
+  Parse numeric strings, treat an empty string as null, and treat an `outlier` of `1`, `"1"`, or
+  `"1.0"` as an outlier.
+- For Psychographics, Online Content Consumption, Transactions, Visitation, and Financial &
+  Household, the dashboard prints each signal's `network_baseline_difference` inside the bar.
+  Chart that field with `scale: "baseline-delta"`; fall back to `scaled_zscore` as ranked strength
+  only when a section returns no differences. Psychographics is the `persona_pulse` block,
+  labeled by `value` alone (`Glamorous`, not `Sophistication: Glamorous`); the dashboard does not
+  show `persona_pulse2`.
+- The MCP block named Preferred Channel supplies the browser's Activity by Channel chart. The
+  browser tooltip describes recent engagement among the reachable audience. Use Reachability
+  rows only for addressable reach; never relabel Preferred Channel as reach.
 - For Demographics, use Customer Overlap fields for Age, Gender, Income, and Ethnicity. Sort each
   distribution largest to smallest, describe audience composition, and exclude geography.
 
@@ -208,7 +237,7 @@ For a broad request, use the normalized ledger from the default fast path and fo
 1. `Executive Audience Brief | <exact report name>`
 2. `Executive Summary` — two or three sentences connecting supported findings to a business implication
    without inventing causation
-3. `Three distinctive findings`, drawn from different usable aspects when supported
+3. `Highlights` — three findings, drawn from different usable aspects when supported
 4. `Audience readout`, covering every usable aspect; do not imply that omitted slower aspects were
    fetched or found empty
 5. `Recommended actions` — up to three, each linked to evidence in the readout
@@ -221,6 +250,9 @@ Keep source names, tool names, omitted or failed aspects, and timestamps interna
 asks how the brief was sourced. Never show raw scores or absolute counts. Ranked-strength data
 supports ranking language, not over/under-index claims.
 
+Before returning, remove every absolute count and the overall match rate: "~2M matched, near-full
+coverage (99.9%)" goes entirely.
+
 For comparisons, align rows by label and preserve one value per report in selection order. Missing
 is null, never zero.
 
@@ -230,19 +262,124 @@ Create HTML only when the user explicitly asks for a shareable, self-contained, 
 file summary. The existing `template.html` in this skill directory defines the layout and look.
 Hand-authored HTML is not a substitute.
 
-Reuse the current normalized ledger and source information. Do not repeat gateway calls for usable
-aspects. If the user requests HTML directly without an existing ledger, run the expanded waves
-once, then render.
+Reuse the current normalized ledger and source information. A follow-up HTML summary covers the
+aspects already retrieved; fetch additional aspects only when the user asks for them or for an
+expanded readout. Never repeat a usable aspect to change its output format. If HTML is requested
+directly without an existing ledger, fetch the expanded readout once. Name omitted aspects in
+`sourceLimit` without treating them as empty data. Apply the dashboard filters from the shared
+reference below, with user-specified or browser-observed selections taking precedence. No separate
+HTML builder or client-specific response conversion is required.
 
-1. Assemble the template data JSON and a source manifest covering every rendered characteristic.
+1. Assemble the existing template's data JSON and a source manifest covering every characteristic
+   and Coverage tab, using the section contract below.
 2. Resolve the plugin root as the parent of the `skills` directory containing this skill.
-3. Validate before rendering:
+3. Validate with the existing validator:
 
    `node <plugin-root>/scripts/validate-data-block.mjs <data.json> --skill customer-pulse --source <source.json>`
 
-4. Correct every validation error and rerun. Never render invalid or hand-entered figures.
-5. Replace the complete `<script id="pulse-data">` contents in `template.html` with the validated
-   JSON and write a standalone `.html` file.
+   Run from the directory containing the saved data and source manifest. Inspect the template's
+   data block and relevant renderer functions; avoid reading or reproducing its embedded image
+   data. Preserve the rest of the template unchanged when inserting the validated JSON.
+
+4. Correct validation errors, then replace the complete `<script id="pulse-data">` contents in
+   `template.html` with the validated JSON and save the standalone HTML.
+
+Use the following section contract:
+
+- **Highlights:** exactly three headline metrics when three usable aspects exist, drawn from
+  different returned aspects. Use a channel or platform signal, a psychographic signal, and a
+  third distinct aspect when available. Each card names its signal and measure; do not use
+  match rate or a raw count.
+- **Coverage:** one section with tabs in this order: Channel Reachability, Activity by Channel,
+  Activity by Social Channel. Feed `reachability` from the Reachability `percentage` field,
+  `activityChannel` from Preferred Channel `percentage`, and `activitySocial` from the Social
+  Platform `network_baseline_difference`, and name each block in the source manifest; the
+  validator rejects any other pairing. Reachability is addressability; Preferred Channel is
+  recent channel engagement, not reach. Use the dashboard's labels and order, verified against
+  the live dashboard: Reachability as Programmatic Universe, CTV, Permissioned Email (returned as
+  `Permissible Email Universe`), Social, Search, Direct Mail, with any other channel after them
+  and `Inbox Advertising` dropped; Activity by Channel largest first, with `Mobile`, `Display`,
+  and `Email` shown as `Programmatic - Mobile`, `Programmatic - Display`, and
+  `Permissioned Email`; Activity by Social Channel in returned order. The dashboard's Overall
+  Coverage match rate stays out of the briefing.
+- **Audience characteristics:** one Demographics tab containing four charts named Age, Gender,
+  Income, and Ethnicity, followed by Psychographics, Online Content Consumption, Transactions,
+  Visitation, and Financial & Household. Set `tab: "Demographics"` on all four demographic
+  charts, use `scale: "customer-overlap"`, and source Age/Gender/Income from
+  `customer_ratio_value` and Ethnicity from `customer_ratio`. Do not chart their index fields.
+  In the HTML, keep Age, Income, and Gender rows in returned band order and list Ethnicity
+  alphabetically, as the dashboard does. The dashboard shows Financial & Household as one chart
+  from one block; if more than one chart is built, give each `tab: "Financial & Household"`.
+  Other aspects may use signed baseline differences or ranked strength only when their source
+  field supports that scale. Never use a retired section name (Content consumption,
+  Transactional interests, Visitation interests, Financial signals, Household and property) as a
+  tab; the validator rejects them.
+- **Signal charts:** an ordinary HTML summary shows up to ten rows per Psychographics or interest
+  chart, after applying the selected filters, sorted by `network_baseline_difference`, largest
+  first; ties keep returned order. Include up to 50 only when the user explicitly asks for a
+  detailed or expanded view. State the displayed limit in `sourceLimit`. Preserve returned topic
+  labels and use the selected category/subcategory filters for approximate alignment. If pages
+  remain, describe these as retrieved signals rather than claiming the exact dashboard top 50.
+- **Source note:** `sourceLimit` always says that Financial & Household values come from a
+  different data block than the dashboard's default view and can differ from it, whenever that
+  chart is shown, and names any partial or omitted section and any tie at the displayed cutoff.
+- Put the dashboard's info-tooltip wording in each chart's gray `caption`. The Coverage
+  tooltips are embedded in the template. The tooltips verified in the live Telecom report are:
+  Age — `Age breakdowns by audience segment`; Gender — `Gender breakdowns by audience segment`;
+  Income — `Household income breakdowns by audience segment`; Ethnicity —
+  `Ethnicity breakdowns by audience segment`; Psychographics —
+  `Values, attitudes and lifestyle traits inferred from online content consumption to enhance audience profiling, messaging, and motivation insights by audience segment.`;
+  Online Content Consumption —
+  `Real-time interest and intent signals derived from online content consumption to understand individual needs, motivations and purchase readiness by audience segment.`;
+  Transactions — `Brands individuals transact with by audience segment.`;
+  Visitation — `Physical brand locations visited by the audience segment.`;
+  Financial & Household — `Financial and Household characteristics by the audience segment.`
+  Recheck the live tooltip when available; do not substitute a metric interpretation as the
+  tooltip text.
+
+### Match the dashboard's filters
+
+For a readout or HTML summary intended to approximate the dashboard's interest views, read
+[references/dashboard-filter-presets.json](references/dashboard-filter-presets.json). This is
+shared data for any agent, captured from dashboard configuration on 2026-09-25. It provides
+category/subcategory presets for 19 industry verticals across
+Online Content Consumption, Transactions, Visitation, and Financial & Household.
+Use these defaults for best-effort alignment; preserve returned topic labels and do not add
+topic-specific hiding or name replacements to reproduce the dashboard exactly.
+
+Use the selected report's `vertical_name` already available from discovery. Convert underscores
+to spaces and title-case the words to find its preset (for example `financial_services` becomes
+`Financial Services`). If the vertical is unknown, reuse the current responses without guessing
+a preset; do not repeat discovery merely for an ordinary brief. A known vertical with no preset,
+such as `generic`, uses no category/subcategory filter. The reference identifies unverified
+configurations; disclose those limitations.
+
+Selections supplied by the user or observed during authorized browser access override the saved
+preset. Do not open the browser automatically. The MCP does not return default UI selections;
+never describe the saved preset as a current browser observation.
+
+Reuse available rows and apply the reference's category/subcategory rules locally. For a missing
+aspect, omit `interests` when applying only a saved dashboard preset: saved names can be aliases
+that the current MCP does not recognize. When the user explicitly names a topic, pass it verbatim
+in `interests` as the tool requires. The current MCP resolves these terms fuzzily across Title,
+ParentGroup, and SubGroup; apply exact dashboard selections locally after the call. Do not refetch
+a usable aspect to change its format or apply filters. Treat `1`, `"1"`, and `"1.0"` as outliers
+when Remove Outliers is enabled, and drop null differences. Sort by `network_baseline_difference` when Sort by Indexing
+is selected. Preserve each row's label, group, subgroup, and boolean outlier flag.
+
+For HTML, record `selection.source` as `dashboard-preset` with the applied preset name, or as
+`browser-observed` or `user-specified` with the selections actually applied. For a known vertical
+without a preset, use its title-cased name and empty category/subcategory lists. If the vertical
+and actual selections are unknown, omit `selection` and state that dashboard filters were not
+verified. Preserve paging metadata; ordinary summaries do not need complete datasets. A failed
+page leaves the section partial and does not justify refetching it.
+
+The MCP interest tools return the `_customer_ratio` blocks, while the dashboard's default
+Indexing view charts the matching blocks without that suffix. In the report verified on
+2026-09-25 the two agreed for Online Content Consumption, Transactions, Visitation, and
+Psychographics but not for Financial & Household (Jazz Music +70% from the MCP, +88% in the
+dashboard). When the browser and MCP disagree, use the MCP value with an explicit note in
+`sourceLimit`; never overwrite it with the browser figure or claim the views are identical.
 
 The HTML must remain self-contained: inline styles, scripts, data, and chart rendering; no CDN or
 external asset dependency. Include the exact returned `redirect_url` as the Go to ZMP link. Do not
@@ -255,14 +392,14 @@ A local path or queued open alone is not delivery proof.
 
 ## Full returned dataset
 
-When explicitly requested, reuse the ledger and render Markdown tables with exactly these columns:
+When explicitly requested, reuse the ledger, complete any recorded continuation pages, and render
+Markdown tables with exactly these columns:
 
 | Aspect | Data | Takeaways |
 | --- | --- | --- |
 
-Use rows in this order: Demographics, Psychographics, Online Content Consumption, Transactions,
-Visitation, Financial & Household, CTV, Linear TV. Fold Coverage signals into Demographics; do not
-create a Coverage row.
+Use rows in this order: Coverage, Demographics, Psychographics, Online Content Consumption,
+Transactions, Visitation, Financial & Household, CTV, Linear TV.
 
 - Coverage: every returned Reachability and Activity rate, sorted; strongest supported Social
   Platform differences.
@@ -279,11 +416,11 @@ consecutive tables with the same columns rather than inventing summary values.
 
 ## Closing invitation
 
-After the default brief, end with this invitation or a close equivalent:
+After the default brief, end with this invitation or a close equivalent. Never proactively offer
+to export or display the full returned dataset in a table:
 
-> Any aspects you want to dig into deeper? I can show the full returned dataset in an expanded
-> table, help you explore this Customer Pulse report further in ZMP, or create a self-contained
-> HTML summary you can share.
+> Any aspects you want to dig into deeper? I can help you explore this Customer Pulse report
+> further in ZMP or create a self-contained HTML summary you can share.
 
 After a full-data table, do not offer the table again. Offer a deeper aspect readout, ZMP
 exploration, or the shareable self-contained HTML summary.
