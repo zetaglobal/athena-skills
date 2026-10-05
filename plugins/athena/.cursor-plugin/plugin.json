@@ -1,7 +1,7 @@
 {
   "name": "athena",
   "displayName": "Athena by Zeta",
-  "version": "0.6.32",
+  "version": "0.6.34",
   "description": "Use Athena by Zeta to analyze audience reach, customer profiles, campaign performance, and marketing datasets available to your authorized Zeta Marketing Platform account. The plugin combines guided skills with MCP tools and returns concise, source-backed answers and executive briefings.",
   "author": {
     "name": "Zeta Global"
